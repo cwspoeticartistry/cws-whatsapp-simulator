@@ -3,97 +3,203 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CWS WhatsApp Simulator</title>
+<title>CWS Simulator Workspace</title>
 <style>
   :root {
-    --wa-green: #075e54;
-    --wa-green-light: #128c7e;
-    --wa-teal: #25d366;
-    --wa-bg: #efeae2;
-    --wa-chat-bg: #e5ddd5;
-    --wa-sent: #dcf8c6;
-    --wa-received: #ffffff;
-    --wa-header: #075e54;
-    --wa-input-bg: #f0f0f0;
-    --wa-text: #303030;
-    --wa-time: #999;
-    --wa-dark-bg: #0b141a;
-    --wa-dark-chat: #0b141a;
-    --wa-dark-sent: #005c4b;
-    --wa-dark-received: #202c33;
-    --wa-dark-text: #e9edef;
-    --wa-dark-input: #2a3942;
-    --wa-dark-header: #1f2c34;
+    --primary: #075e54;
+    --primary-light: #128c7e;
+    --accent: #25d366;
+    --bg: #0b141a;
+    --surface: #1a2430;
+    --surface2: #202c33;
+    --text: #e9edef;
+    --text-muted: #8696a0;
+    --gold: #d4a843;
+    --gold-dim: #a88434;
+    --wa-sent: #005c4b;
+    --wa-received: #202c33;
+    --wa-chat-bg: #0b141a;
+    --danger: #ef4444;
+    --border: #2a3942;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--wa-bg);
+    background: var(--bg);
+    color: var(--text);
     height: 100vh;
     height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ===== HERO PAGE ===== */
+  .hero-page {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    color: var(--wa-text);
+    background: linear-gradient(135deg, #0b141a 0%, #1a2430 50%, #0f1f2a 100%);
   }
 
-  /* Header */
-  .header {
-    background: var(--wa-header);
-    color: white;
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 56px;
-    z-index: 10;
-  }
-
-  .header-avatar {
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    background: var(--wa-green-light);
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 16px;
+  .hero-header {
+    text-align: center;
+    padding: 40px 20px 20px;
     flex-shrink: 0;
   }
 
-  .header-info { flex: 1; }
-  .header-name { font-size: 16px; font-weight: 600; }
-  .header-status { font-size: 12px; opacity: 0.8; }
-
-  .header-actions { display: flex; gap: 8px; }
-  .header-btn {
-    background: none; border: none; color: white;
-    padding: 8px; cursor: pointer; border-radius: 50%;
-    font-size: 18px; line-height: 1;
+  .hero-logo {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800; color: #1a1a1a;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 20px rgba(212,168,67,0.3);
   }
-  .header-btn:hover { background: rgba(255,255,255,0.1); }
+
+  .hero-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .hero-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    align-content: start;
+  }
+
+  .sim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .sim-card:hover { background: var(--surface2); border-color: var(--gold-dim); transform: translateY(-2px); }
+  .sim-card:active { transform: scale(0.97); }
+
+  .sim-card-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+
+  .sim-card-title { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .sim-card-desc { font-size: 11px; color: var(--text-muted); line-height: 1.3; }
+
+  .sim-card.active { border-color: var(--accent); }
+  .sim-card.coming-soon { opacity: 0.5; cursor: default; }
+  .sim-card.coming-soon:hover { transform: none; border-color: var(--border); background: var(--surface); }
+
+  .badge-soon {
+    font-size: 9px;
+    background: var(--border);
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hero-footer {
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ===== SIMULATOR PAGE ===== */
+  .sim-page {
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sim-page.active { display: flex; }
+
+  /* Header */
+  .header {
+    background: #1f2c34;
+    color: white;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  .header-back {
+    background: none; border: none; color: white;
+    font-size: 20px; padding: 4px 6px; cursor: pointer;
+    border-radius: 50%;
+  }
+  .header-back:hover { background: rgba(255,255,255,0.1); }
+
+  .header-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #1a1a1a;
+    flex-shrink: 0;
+  }
+
+  .header-info { flex: 1; min-width: 0; }
+  .header-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-status { font-size: 11px; color: var(--text-muted); }
+
+  .header-actions { display: flex; gap: 4px; }
+  .header-btn {
+    background: none; border: none; color: var(--text-muted);
+    padding: 6px; cursor: pointer; border-radius: 50%;
+    font-size: 16px; line-height: 1;
+  }
+  .header-btn:hover { background: rgba(255,255,255,0.08); color: white; }
 
   /* Chat area */
   .chat-area {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 16px;
+    padding: 8px 12px;
     background: var(--wa-chat-bg);
-    background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c5bfb2' fill-opacity='0.08'%3E%3Cpath d='M20 20h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8z'/%3E%3Cpath d='M20 60h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8z'/%3E%3C/g%3E%3C/svg%3E");
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
   }
 
-  /* Messages */
   .msg {
-    max-width: 85%;
+    max-width: 88%;
     padding: 6px 8px 4px;
     border-radius: 8px;
     position: relative;
     word-wrap: break-word;
     line-height: 1.4;
-    font-size: 14.5px;
-    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+    font-size: 14px;
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.2);
   }
 
   .msg-sent {
@@ -108,37 +214,80 @@
     border-top-left-radius: 0;
   }
 
-  .msg-text { margin-bottom: 2px; }
+  .msg-text { margin-bottom: 2px; white-space: pre-wrap; }
 
   .msg-image {
     max-width: 100%;
+    max-height: 300px;
     border-radius: 6px;
     margin-bottom: 4px;
     cursor: pointer;
+    object-fit: contain;
   }
 
   .msg-time {
-    font-size: 11px;
-    color: var(--wa-time);
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
     text-align: right;
     margin-top: 2px;
   }
 
-  .msg-sent .msg-time::after {
-    content: ' \u2713\u2713';
-    color: #53bdeb;
-  }
+  .msg-sent .msg-time::after { content: ' \u2713\u2713'; color: #53bdeb; }
 
   .msg-system {
     align-self: center;
-    background: #fef3c7;
-    color: #92400e;
+    background: rgba(212,168,67,0.15);
+    color: var(--gold);
     font-size: 12px;
     padding: 4px 12px;
     border-radius: 6px;
     text-align: center;
     max-width: 90%;
   }
+
+  /* Prompt blocks */
+  .prompt-block {
+    margin-top: 6px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 12px;
+  }
+  .prompt-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--gold);
+  }
+  .prompt-block-body {
+    padding: 8px;
+    display: none;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-muted);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .prompt-block-body.open { display: block; }
+
+  .copy-btn {
+    background: var(--border);
+    border: none;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+  }
+  .copy-btn:hover { background: var(--primary-light); color: white; }
 
   /* Typing indicator */
   .typing-indicator {
@@ -149,82 +298,77 @@
     border-top-left-radius: 0;
     display: none;
     gap: 4px;
-    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.2);
   }
   .typing-indicator.active { display: flex; }
   .typing-dot {
-    width: 8px; height: 8px;
-    background: #999;
+    width: 7px; height: 7px;
+    background: var(--text-muted);
     border-radius: 50%;
     animation: typingBounce 1.4s infinite ease-in-out;
   }
-  .typing-dot:nth-child(1) { animation-delay: 0s; }
   .typing-dot:nth-child(2) { animation-delay: 0.2s; }
   .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
   @keyframes typingBounce {
     0%, 60%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-6px); }
+    30% { transform: translateY(-5px); }
   }
 
   /* Input area */
   .input-area {
-    background: var(--wa-input-bg);
+    background: #1f2c34;
     padding: 6px 8px;
     display: flex;
     align-items: flex-end;
     gap: 6px;
-    min-height: 56px;
-  }
-
-  .input-actions {
-    display: flex;
-    gap: 2px;
-    padding-bottom: 8px;
+    min-height: 52px;
+    flex-shrink: 0;
   }
 
   .input-btn {
     background: none; border: none;
-    color: #54656f;
+    color: var(--text-muted);
     padding: 6px;
     cursor: pointer;
     border-radius: 50%;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1;
     flex-shrink: 0;
   }
-  .input-btn:hover { background: rgba(0,0,0,0.05); }
+  .input-btn:hover { color: var(--text); }
 
   .input-wrapper {
     flex: 1;
-    background: white;
-    border-radius: 24px;
-    padding: 8px 16px;
+    background: var(--surface2);
+    border-radius: 22px;
+    padding: 8px 14px;
     display: flex;
     align-items: center;
-    min-height: 40px;
+    min-height: 38px;
   }
 
   #msgInput {
     flex: 1;
     border: none;
     outline: none;
-    font-size: 15px;
+    font-size: 14px;
     font-family: inherit;
     resize: none;
     max-height: 100px;
     line-height: 1.4;
     background: transparent;
-    color: var(--wa-text);
+    color: var(--text);
   }
+  #msgInput::placeholder { color: var(--text-muted); }
 
   .send-btn {
-    width: 44px; height: 44px;
+    width: 40px; height: 40px;
     border-radius: 50%;
-    background: var(--wa-teal);
+    background: var(--accent);
     border: none;
     color: white;
-    font-size: 20px;
+    font-size: 18px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -232,36 +376,186 @@
     flex-shrink: 0;
     transition: background 0.15s;
   }
-  .send-btn:hover { background: var(--wa-green-light); }
-  .send-btn:disabled { background: #ccc; cursor: default; }
+  .send-btn:hover { background: var(--primary-light); }
+  .send-btn:disabled { background: var(--border); cursor: default; }
 
-  /* Image preview */
+  /* Image preview bar */
   .image-preview {
     display: none;
-    background: var(--wa-input-bg);
-    padding: 8px 16px;
-    border-top: 1px solid #ddd;
+    background: #1f2c34;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
   }
   .image-preview.active { display: flex; align-items: center; gap: 8px; }
   .image-preview img {
-    width: 48px; height: 48px;
+    width: 44px; height: 44px;
     object-fit: cover;
     border-radius: 6px;
+    border: 1px solid var(--border);
   }
   .image-preview .remove-img {
     background: none; border: none;
-    color: #e74c3c; font-size: 20px;
+    color: var(--danger); font-size: 18px;
     cursor: pointer; padding: 4px;
   }
-  .image-preview span { flex: 1; font-size: 13px; color: #666; }
+  .image-preview span { flex: 1; font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  /* Settings modal */
+  /* Product selection bar */
+  .product-bar {
+    display: none;
+    background: #1f2c34;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border);
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .product-bar.active { display: flex; }
+  .product-bar-thumb {
+    width: 40px; height: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--gold-dim);
+  }
+  .product-bar-info { flex: 1; min-width: 0; }
+  .product-bar-name { font-size: 13px; font-weight: 600; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .product-bar-price { font-size: 11px; color: var(--text-muted); }
+  .product-bar .remove-img { background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; }
+
+  /* ===== CATALOGUE DRAWER ===== */
+  .catalogue-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+  }
+  .catalogue-overlay.active { display: block; }
+
+  .catalogue-drawer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-radius: 16px 16px 0 0;
+    z-index: 201;
+    max-height: 85vh;
+    display: none;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+  }
+  .catalogue-drawer.active { display: flex; transform: translateY(0); }
+
+  .catalogue-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+
+  .catalogue-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .catalogue-header h2 { font-size: 16px; flex: 1; }
+  .catalogue-close {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 22px; cursor: pointer; padding: 4px;
+  }
+
+  .catalogue-search {
+    padding: 8px 16px;
+    flex-shrink: 0;
+  }
+  .catalogue-search input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .catalogue-search input::placeholder { color: var(--text-muted); }
+  .catalogue-search input:focus { border-color: var(--primary-light); }
+
+  .catalogue-count {
+    padding: 0 16px 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .catalogue-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 12px 20px;
+  }
+
+  .cat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid rgba(42,57,66,0.5);
+  }
+  .cat-item:hover { background: var(--surface2); }
+  .cat-item:active { background: rgba(37,211,102,0.1); }
+
+  .cat-img {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .cat-info { flex: 1; min-width: 0; }
+  .cat-name { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .cat-old-name { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .cat-meta { font-size: 12px; color: var(--gold); margin-top: 2px; font-weight: 600; }
+  .cat-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .cat-badge.cached { background: rgba(37,211,102,0.15); color: var(--accent); }
+  .cat-badge.no-img { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+  .cat-img-placeholder {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  /* ===== SETTINGS MODAL ===== */
   .modal-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 100;
+    background: rgba(0,0,0,0.6);
+    z-index: 300;
     align-items: center;
     justify-content: center;
     padding: 16px;
@@ -269,188 +563,280 @@
   .modal-overlay.active { display: flex; }
 
   .modal {
-    background: white;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
     padding: 24px;
     width: 100%;
-    max-width: 420px;
-    max-height: 90vh;
+    max-width: 400px;
+    max-height: 85vh;
     overflow-y: auto;
   }
-
-  .modal h2 {
-    font-size: 18px;
-    margin-bottom: 16px;
-    color: var(--wa-header);
-  }
+  .modal h2 { font-size: 17px; margin-bottom: 16px; color: var(--gold); }
 
   .modal label {
     display: block;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    color: #555;
+    color: var(--text-muted);
     margin-bottom: 4px;
     margin-top: 12px;
   }
-
   .modal input, .modal select {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #ddd;
+    background: var(--surface2);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-family: inherit;
+    color: var(--text);
   }
-  .modal input:focus, .modal select:focus {
-    outline: none;
-    border-color: var(--wa-green-light);
-  }
+  .modal input:focus, .modal select:focus { outline: none; border-color: var(--primary-light); }
 
   .modal-btns {
     display: flex;
     gap: 8px;
     margin-top: 20px;
   }
-
   .modal-btns button {
     flex: 1;
     padding: 10px;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     border: none;
   }
+  .btn-save { background: var(--accent); color: #111; }
+  .btn-cancel { background: var(--border); color: var(--text-muted); }
 
-  .btn-save {
-    background: var(--wa-teal);
-    color: white;
+  .conn-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
   }
-  .btn-cancel {
-    background: #eee;
-    color: #333;
-  }
-
-  .conn-status {
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 10px;
-    font-weight: 600;
-  }
-  .conn-connected { background: #d1fae5; color: #065f46; }
-  .conn-disconnected { background: #fee2e2; color: #991b1b; }
+  .conn-dot.on { background: var(--accent); }
+  .conn-dot.off { background: var(--danger); }
 
   /* Date separator */
   .date-sep {
     align-self: center;
-    background: rgba(225,218,208,0.88);
-    color: #54656f;
-    font-size: 12px;
+    background: rgba(30,44,54,0.9);
+    color: var(--text-muted);
+    font-size: 11px;
     padding: 4px 12px;
     border-radius: 6px;
     margin: 8px 0;
   }
 
   /* Scrollbar */
-  .chat-area::-webkit-scrollbar { width: 6px; }
-  .chat-area::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
 
-  /* Hidden file input */
-  #imageInput { display: none; }
+  /* Hidden file inputs */
+  #imageInput, #sceneInput { display: none; }
 
-  /* Responsive */
-  @media (min-width: 600px) {
-    body {
-      max-width: 420px;
-      margin: 0 auto;
-      border-left: 1px solid #ddd;
-      border-right: 1px solid #ddd;
-    }
+  /* Fullscreen image viewer */
+  .img-viewer {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    cursor: pointer;
+  }
+  .img-viewer.active { display: flex; }
+  .img-viewer img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
   }
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="header-avatar">CWS</div>
-  <div class="header-info">
-    <div class="header-name">CWS Business Bot</div>
-    <div class="header-status" id="connStatus">
-      <span class="conn-status conn-disconnected" id="connBadge">Not configured</span>
+<!-- ===== HERO PAGE ===== -->
+<div class="hero-page" id="heroPage">
+  <div class="hero-header">
+    <div class="hero-logo">CWS</div>
+    <div class="hero-title">CWS Simulator Workspace</div>
+    <div class="hero-subtitle">Creative Workflow System Testing Environment</div>
+  </div>
+
+  <div class="hero-grid">
+    <!-- Image Gen Simulator -->
+    <div class="sim-card active" onclick="openSim('image-gen')">
+      <div class="sim-card-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-light));">
+        <span>&#x1F3A8;</span>
+      </div>
+      <div class="sim-card-title">Image Generator</div>
+      <div class="sim-card-desc">Product promo images + video prompts with catalogue browser</div>
+    </div>
+
+    <!-- Sales Assistant -->
+    <div class="sim-card coming-soon">
+      <div class="sim-card-icon" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">
+        <span>&#x1F4AC;</span>
+      </div>
+      <div class="sim-card-title">Sales Assistant</div>
+      <div class="sim-card-desc">Customer conversations and product recommendations</div>
+      <span class="badge-soon">Coming Soon</span>
+    </div>
+
+    <!-- Business Updater -->
+    <div class="sim-card coming-soon">
+      <div class="sim-card-icon" style="background: linear-gradient(135deg, #ea580c, #f59e0b);">
+        <span>&#x2699;</span>
+      </div>
+      <div class="sim-card-title">Business Updater</div>
+      <div class="sim-card-desc">Update brand, products, prices, and promotions</div>
+      <span class="badge-soon">Coming Soon</span>
+    </div>
+
+    <!-- CRM & Orders -->
+    <div class="sim-card coming-soon">
+      <div class="sim-card-icon" style="background: linear-gradient(135deg, #0284c7, #06b6d4);">
+        <span>&#x1F4CB;</span>
+      </div>
+      <div class="sim-card-title">CRM & Orders</div>
+      <div class="sim-card-desc">Order creation, invoicing, and payment tracking</div>
+      <span class="badge-soon">Coming Soon</span>
+    </div>
+
+    <!-- Onboarding -->
+    <div class="sim-card coming-soon">
+      <div class="sim-card-icon" style="background: linear-gradient(135deg, #059669, #34d399);">
+        <span>&#x1F680;</span>
+      </div>
+      <div class="sim-card-title">Business Onboarding</div>
+      <div class="sim-card-desc">New business setup and identity creation</div>
+      <span class="badge-soon">Coming Soon</span>
+    </div>
+
+    <!-- System Status -->
+    <div class="sim-card coming-soon">
+      <div class="sim-card-icon" style="background: linear-gradient(135deg, #dc2626, #f87171);">
+        <span>&#x1F4CA;</span>
+      </div>
+      <div class="sim-card-title">System Status</div>
+      <div class="sim-card-desc">Workflow health, execution logs, and reports</div>
+      <span class="badge-soon">Coming Soon</span>
     </div>
   </div>
-  <div class="header-actions">
-    <button class="header-btn" onclick="clearChat()" title="Clear chat">&#x1f5d1;</button>
-    <button class="header-btn" onclick="openSettings()" title="Settings">&#x2699;</button>
+
+  <div class="hero-footer">
+    CWS v0.1 &mdash; Dr Gee (Business #1) &mdash; <span id="serverStatus">Checking server...</span>
   </div>
 </div>
 
-<!-- Chat Area -->
-<div class="chat-area" id="chatArea">
-  <div class="date-sep">Today</div>
-  <div class="msg msg-system">
-    Welcome to the CWS WhatsApp Simulator. Tap the gear icon to set your webhook URL, then start chatting to test the workflow.
+<!-- ===== IMAGE GEN SIMULATOR ===== -->
+<div class="sim-page" id="simImageGen">
+  <!-- Header -->
+  <div class="header">
+    <button class="header-back" onclick="goHome()">&#x2190;</button>
+    <div class="header-avatar">DG</div>
+    <div class="header-info">
+      <div class="header-name">Dr Gee Image Generator</div>
+      <div class="header-status">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connLabel">Not configured</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="openCatalogue()" title="Product Catalogue">&#x1F4D6;</button>
+      <button class="header-btn" onclick="clearChat()" title="Clear chat">&#x1F5D1;</button>
+      <button class="header-btn" onclick="openSettings()" title="Settings">&#x2699;</button>
+    </div>
   </div>
-</div>
 
-<!-- Typing Indicator -->
-<div class="typing-indicator" id="typingIndicator">
-  <div class="typing-dot"></div>
-  <div class="typing-dot"></div>
-  <div class="typing-dot"></div>
-</div>
+  <!-- Chat Area -->
+  <div class="chat-area" id="chatArea">
+    <div class="date-sep">Today</div>
+    <div class="msg msg-system">
+      Welcome to the Dr Gee Image Generator. Set your webhook URL (gear icon), then browse the catalogue (book icon) to select a product, or type a product name.
+    </div>
+  </div>
 
-<!-- Image Preview -->
-<div class="image-preview" id="imagePreview">
-  <img id="previewImg" src="" alt="preview">
-  <span id="previewName">image.png</span>
-  <button class="remove-img" onclick="removeImage()">&#x2715;</button>
-</div>
+  <!-- Typing Indicator -->
+  <div class="typing-indicator" id="typingIndicator">
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+  </div>
 
-<!-- Input Area -->
-<div class="input-area">
-  <div class="input-actions">
-    <button class="input-btn" onclick="document.getElementById('imageInput').click()" title="Attach image">
-      &#x1F4CE;
+  <!-- Product selection bar -->
+  <div class="product-bar" id="productBar">
+    <img class="product-bar-thumb" id="productBarImg" src="" alt="">
+    <div class="product-bar-info">
+      <div class="product-bar-name" id="productBarName">-</div>
+      <div class="product-bar-price" id="productBarPrice">-</div>
+    </div>
+    <button class="remove-img" onclick="clearSelectedProduct()">&#x2715;</button>
+  </div>
+
+  <!-- Scene image preview -->
+  <div class="image-preview" id="imagePreview">
+    <img id="previewImg" src="" alt="preview">
+    <span id="previewName">scene.png</span>
+    <button class="remove-img" onclick="removeScene()">&#x2715;</button>
+  </div>
+
+  <!-- Input Area -->
+  <div class="input-area">
+    <button class="input-btn" onclick="document.getElementById('sceneInput').click()" title="Upload scene/reference image">
+      &#x1F5BC;
     </button>
+    <button class="input-btn" onclick="openCatalogue()" title="Browse catalogue">
+      &#x1F50D;
+    </button>
+    <div class="input-wrapper">
+      <textarea id="msgInput" rows="1" placeholder="Describe your promo image..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">&#x27A4;</button>
   </div>
-  <div class="input-wrapper">
-    <textarea id="msgInput" rows="1" placeholder="Type a message" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-  </div>
-  <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-    &#x27A4;
-  </button>
 </div>
 
-<input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(event)">
+<!-- Hidden file inputs -->
+<input type="file" id="sceneInput" accept="image/*" onchange="handleSceneSelect(event)">
 
-<!-- Settings Modal -->
+<!-- ===== CATALOGUE DRAWER ===== -->
+<div class="catalogue-overlay" id="catOverlay" onclick="closeCatalogue()"></div>
+<div class="catalogue-drawer" id="catDrawer">
+  <div class="catalogue-handle"></div>
+  <div class="catalogue-header">
+    <h2>Dr Gee Products</h2>
+    <button class="catalogue-close" onclick="closeCatalogue()">&#x2715;</button>
+  </div>
+  <div class="catalogue-search">
+    <input type="text" id="catSearch" placeholder="Search products..." oninput="filterCatalogue()">
+  </div>
+  <div class="catalogue-count" id="catCount">Loading...</div>
+  <div class="catalogue-list" id="catList"></div>
+</div>
+
+<!-- ===== SETTINGS MODAL ===== -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
-    <h2>Webhook Settings</h2>
+    <h2>Server Settings</h2>
 
-    <label for="webhookUrl">n8n Webhook URL</label>
-    <input type="url" id="webhookUrl" placeholder="https://your-n8n.app.n8n.cloud/webhook/...">
+    <label for="webhookUrl">Webhook URL</label>
+    <input type="url" id="webhookUrl" placeholder="http://192.168.88.11:5055/webhook">
+
+    <label for="serverBase">Server Base URL (for images)</label>
+    <input type="url" id="serverBase" placeholder="http://192.168.88.11:5055">
 
     <label for="businessId">Business ID</label>
     <input type="text" id="businessId" placeholder="dr-gee" value="dr-gee">
 
-    <label for="senderId">Sender Phone (simulated)</label>
-    <input type="text" id="senderId" placeholder="+27831234567" value="+27831234567">
-
-    <label for="senderName">Sender Name</label>
+    <label for="senderName">Your Name</label>
     <input type="text" id="senderName" placeholder="Test User" value="Test User">
-
-    <label for="channelType">Channel</label>
-    <select id="channelType">
-      <option value="whatsapp">WhatsApp</option>
-      <option value="web_chat">Web Chat</option>
-      <option value="email">Email</option>
-    </select>
-
-    <label for="webhookAuth">Auth Header (optional)</label>
-    <input type="text" id="webhookAuth" placeholder="Bearer your-token-here">
 
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
@@ -459,37 +845,57 @@
   </div>
 </div>
 
+<!-- ===== IMAGE VIEWER ===== -->
+<div class="img-viewer" id="imgViewer" onclick="closeViewer()">
+  <img id="viewerImg" src="" alt="Full size">
+</div>
+
 <script>
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
-let pendingImage = null;    // { base64, filename, type }
+// ============================================================
+// STATE
+// ============================================================
+let selectedProduct = null;  // { name, price, slug, image_url, ... }
+let pendingScene = null;     // { base64, dataUrl, filename }
 let isWaiting = false;
+let catalogueData = [];
 let sessionId = localStorage.getItem('cws_session_id') || generateId();
 localStorage.setItem('cws_session_id', sessionId);
 
-// ---------------------------------------------------------------------------
-// Settings
-// ---------------------------------------------------------------------------
+// ============================================================
+// NAVIGATION
+// ============================================================
+function openSim(id) {
+  document.getElementById('heroPage').style.display = 'none';
+  if (id === 'image-gen') {
+    document.getElementById('simImageGen').classList.add('active');
+    updateConnStatus();
+    loadCatalogueData();
+  }
+}
+
+function goHome() {
+  document.getElementById('simImageGen').classList.remove('active');
+  document.getElementById('heroPage').style.display = '';
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
 function loadSettings() {
   return {
     webhookUrl:  localStorage.getItem('cws_webhook_url')  || '',
-    businessId:  localStorage.getItem('cws_business_id')  || 'dr-gee',
-    senderId:    localStorage.getItem('cws_sender_id')    || '+27831234567',
-    senderName:  localStorage.getItem('cws_sender_name')  || 'Test User',
-    channelType: localStorage.getItem('cws_channel_type') || 'whatsapp',
-    webhookAuth: localStorage.getItem('cws_webhook_auth') || '',
+    serverBase:  localStorage.getItem('cws_server_base')   || '',
+    businessId:  localStorage.getItem('cws_business_id')   || 'dr-gee',
+    senderName:  localStorage.getItem('cws_sender_name')   || 'Test User',
   };
 }
 
 function openSettings() {
   const s = loadSettings();
   document.getElementById('webhookUrl').value  = s.webhookUrl;
+  document.getElementById('serverBase').value  = s.serverBase;
   document.getElementById('businessId').value  = s.businessId;
-  document.getElementById('senderId').value    = s.senderId;
   document.getElementById('senderName').value  = s.senderName;
-  document.getElementById('channelType').value = s.channelType;
-  document.getElementById('webhookAuth').value = s.webhookAuth;
   document.getElementById('settingsModal').classList.add('active');
 }
 
@@ -499,31 +905,164 @@ function closeSettings() {
 
 function saveSettings() {
   localStorage.setItem('cws_webhook_url',  document.getElementById('webhookUrl').value.trim());
+  localStorage.setItem('cws_server_base',  document.getElementById('serverBase').value.trim().replace(/\/$/, ''));
   localStorage.setItem('cws_business_id',  document.getElementById('businessId').value.trim());
-  localStorage.setItem('cws_sender_id',    document.getElementById('senderId').value.trim());
   localStorage.setItem('cws_sender_name',  document.getElementById('senderName').value.trim());
-  localStorage.setItem('cws_channel_type', document.getElementById('channelType').value);
-  localStorage.setItem('cws_webhook_auth', document.getElementById('webhookAuth').value.trim());
   closeSettings();
   updateConnStatus();
-  addSystemMsg('Settings saved. Webhook: ' + document.getElementById('webhookUrl').value.trim());
+  loadCatalogueData();
+  addSystemMsg('Settings saved.');
 }
 
 function updateConnStatus() {
-  const badge = document.getElementById('connBadge');
+  const dot = document.getElementById('connDot');
+  const label = document.getElementById('connLabel');
   const url = localStorage.getItem('cws_webhook_url') || '';
   if (url) {
-    badge.textContent = 'Connected';
-    badge.className = 'conn-status conn-connected';
+    dot.className = 'conn-dot on';
+    label.textContent = 'Connected';
   } else {
-    badge.textContent = 'Not configured';
-    badge.className = 'conn-status conn-disconnected';
+    dot.className = 'conn-dot off';
+    label.textContent = 'Not configured';
   }
 }
 
-// ---------------------------------------------------------------------------
-// Messages
-// ---------------------------------------------------------------------------
+// ============================================================
+// CATALOGUE
+// ============================================================
+async function loadCatalogueData() {
+  const base = localStorage.getItem('cws_server_base') || '';
+  if (!base) return;
+  try {
+    const resp = await fetch(base + '/api/catalogue');
+    if (resp.ok) {
+      catalogueData = await resp.json();
+      renderCatalogue(catalogueData);
+    }
+  } catch (e) {
+    console.log('Catalogue load error:', e);
+  }
+}
+
+function renderCatalogue(items) {
+  const list = document.getElementById('catList');
+  const base = localStorage.getItem('cws_server_base') || '';
+  list.innerHTML = '';
+
+  items.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'cat-item';
+    div.onclick = () => selectProduct(p);
+
+    let imgHtml;
+    if (p.image_url && base) {
+      imgHtml = `<img class="cat-img" src="${base}${p.image_url}" alt="${p.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" loading="lazy"><div class="cat-img-placeholder" style="display:none">&#x1F48A;</div>`;
+    } else {
+      imgHtml = `<div class="cat-img-placeholder">&#x1F48A;</div>`;
+    }
+
+    let badges = '';
+    if (p.cached) badges += '<span class="cat-badge cached">Cached</span> ';
+    if (!p.image_file) badges += '<span class="cat-badge no-img">No Image</span>';
+
+    div.innerHTML = `
+      ${imgHtml}
+      <div class="cat-info">
+        <div class="cat-name">${esc(p.name)}</div>
+        ${p.old_name ? `<div class="cat-old-name">aka: ${esc(p.old_name)}</div>` : ''}
+        <div class="cat-meta">R${p.price} ${badges}</div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  document.getElementById('catCount').textContent = `${items.length} products`;
+}
+
+function filterCatalogue() {
+  const q = document.getElementById('catSearch').value.toLowerCase().trim();
+  if (!q) {
+    renderCatalogue(catalogueData);
+    return;
+  }
+  const filtered = catalogueData.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    (p.old_name && p.old_name.toLowerCase().includes(q)) ||
+    (p.product_line && p.product_line.toLowerCase().includes(q)) ||
+    (p.description && p.description.toLowerCase().includes(q))
+  );
+  renderCatalogue(filtered);
+}
+
+function openCatalogue() {
+  document.getElementById('catOverlay').classList.add('active');
+  document.getElementById('catDrawer').classList.add('active');
+  document.getElementById('catSearch').value = '';
+  if (catalogueData.length) renderCatalogue(catalogueData);
+  setTimeout(() => document.getElementById('catSearch').focus(), 300);
+}
+
+function closeCatalogue() {
+  document.getElementById('catOverlay').classList.remove('active');
+  document.getElementById('catDrawer').classList.remove('active');
+}
+
+function selectProduct(p) {
+  selectedProduct = p;
+  const base = localStorage.getItem('cws_server_base') || '';
+  const bar = document.getElementById('productBar');
+  const img = document.getElementById('productBarImg');
+  const name = document.getElementById('productBarName');
+  const price = document.getElementById('productBarPrice');
+
+  name.textContent = p.name;
+  price.textContent = `R${p.price}`;
+  if (p.image_url && base) {
+    img.src = base + p.image_url;
+    img.style.display = '';
+  } else {
+    img.style.display = 'none';
+  }
+  bar.classList.add('active');
+  closeCatalogue();
+  document.getElementById('msgInput').focus();
+}
+
+function clearSelectedProduct() {
+  selectedProduct = null;
+  document.getElementById('productBar').classList.remove('active');
+}
+
+// ============================================================
+// SCENE IMAGE
+// ============================================================
+function handleSceneSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    pendingScene = {
+      base64: e.target.result.split(',')[1],
+      dataUrl: e.target.result,
+      filename: file.name,
+      type: file.type,
+    };
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('previewName').textContent = 'Scene: ' + file.name;
+    document.getElementById('imagePreview').classList.add('active');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function removeScene() {
+  pendingScene = null;
+  document.getElementById('imagePreview').classList.remove('active');
+}
+
+// ============================================================
+// MESSAGES
+// ============================================================
 function getTime() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
@@ -532,17 +1071,26 @@ function generateId() {
   return 'sim_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 }
 
-function addMessage(text, type, imageDataUrl) {
+function esc(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function addMessage(text, type, imageUrl, extraHtml) {
   const chatArea = document.getElementById('chatArea');
   const div = document.createElement('div');
   div.className = 'msg msg-' + type;
 
   let html = '';
-  if (imageDataUrl) {
-    html += '<img class="msg-image" src="' + imageDataUrl + '" alt="image" onclick="window.open(this.src)">';
+  if (imageUrl) {
+    html += `<img class="msg-image" src="${imageUrl}" alt="image" onclick="viewImage(this.src)" onerror="this.alt='[Image failed to load]';this.style.opacity='0.3'">`;
   }
   if (text) {
-    html += '<div class="msg-text">' + escapeHtml(text) + '</div>';
+    html += '<div class="msg-text">' + esc(text).replace(/\n/g, '<br>') + '</div>';
+  }
+  if (extraHtml) {
+    html += extraHtml;
   }
   html += '<div class="msg-time">' + getTime() + '</div>';
   div.innerHTML = html;
@@ -560,12 +1108,6 @@ function addSystemMsg(text) {
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-function escapeHtml(text) {
-  const d = document.createElement('div');
-  d.textContent = text;
-  return d.innerHTML.replace(/\n/g, '<br>');
-}
-
 function showTyping(show) {
   const el = document.getElementById('typingIndicator');
   el.classList.toggle('active', show);
@@ -576,128 +1118,152 @@ function showTyping(show) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Image handling
-// ---------------------------------------------------------------------------
-function handleImageSelect(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    pendingImage = {
-      base64: e.target.result.split(',')[1],
-      dataUrl: e.target.result,
-      filename: file.name,
-      type: file.type,
-    };
-    document.getElementById('previewImg').src = e.target.result;
-    document.getElementById('previewName').textContent = file.name;
-    document.getElementById('imagePreview').classList.add('active');
-  };
-  reader.readAsDataURL(file);
-  event.target.value = '';
+function viewImage(src) {
+  document.getElementById('viewerImg').src = src;
+  document.getElementById('imgViewer').classList.add('active');
 }
 
-function removeImage() {
-  pendingImage = null;
-  document.getElementById('imagePreview').classList.remove('active');
+function closeViewer() {
+  document.getElementById('imgViewer').classList.remove('active');
 }
 
-// ---------------------------------------------------------------------------
-// Send message
-// ---------------------------------------------------------------------------
+// ============================================================
+// PROMPT BLOCKS (collapsible + copy)
+// ============================================================
+function buildPromptHtml(imagePrompt, videoPrompt) {
+  let html = '';
+  if (imagePrompt) {
+    const id1 = 'pb_' + Date.now() + '_img';
+    html += `
+      <div class="prompt-block">
+        <div class="prompt-block-header" onclick="togglePrompt('${id1}')">
+          Image Prompt <button class="copy-btn" onclick="event.stopPropagation();copyPrompt('${id1}')">Copy</button>
+        </div>
+        <div class="prompt-block-body" id="${id1}">${esc(imagePrompt)}</div>
+      </div>`;
+  }
+  if (videoPrompt) {
+    const id2 = 'pb_' + Date.now() + '_vid';
+    html += `
+      <div class="prompt-block">
+        <div class="prompt-block-header" onclick="togglePrompt('${id2}')">
+          Video Prompt (for Gemini) <button class="copy-btn" onclick="event.stopPropagation();copyPrompt('${id2}')">Copy</button>
+        </div>
+        <div class="prompt-block-body" id="${id2}">${esc(videoPrompt)}</div>
+      </div>`;
+  }
+  return html;
+}
+
+function togglePrompt(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function copyPrompt(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(id).previousElementSibling.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+// ============================================================
+// SEND MESSAGE
+// ============================================================
 async function sendMessage() {
   if (isWaiting) return;
 
   const input = document.getElementById('msgInput');
   const text = input.value.trim();
-  const image = pendingImage;
 
-  if (!text && !image) return;
+  if (!text && !selectedProduct) return;
 
   const settings = loadSettings();
   if (!settings.webhookUrl) {
-    addSystemMsg('Please configure the webhook URL first (tap the gear icon).');
+    addSystemMsg('Please configure the webhook URL first (gear icon).');
     openSettings();
     return;
   }
 
-  // Show sent message
-  addMessage(text, 'sent', image ? image.dataUrl : null);
-  input.value = '';
-  autoResize(input);
-  removeImage();
+  // Build display text
+  let displayText = text;
+  if (selectedProduct && !text) {
+    displayText = `Generate promo image for: ${selectedProduct.name}`;
+  }
 
-  // Build payload (mirrors WhatsApp webhook structure)
+  // Show sent message
+  const sceneUrl = pendingScene ? pendingScene.dataUrl : null;
+  addMessage(displayText, 'sent', sceneUrl);
+
+  // Build payload
   const payload = {
     source: 'cws_simulator',
-    channel: settings.channelType,
+    channel: 'whatsapp',
     session_id: sessionId,
     timestamp: new Date().toISOString(),
-    sender: {
-      phone: settings.senderId,
-      name: settings.senderName,
-    },
+    sender: { phone: '+27831234567', name: settings.senderName },
     business_id: settings.businessId,
     message: {
-      type: image ? 'image' : 'text',
-      text: text || '',
+      type: pendingScene ? 'image' : 'text',
+      text: text || (selectedProduct ? `Create promo for ${selectedProduct.name}` : ''),
     },
   };
 
-  if (image) {
+  if (selectedProduct) {
+    payload.selected_product = selectedProduct.name;
+  }
+
+  if (pendingScene) {
+    payload.scene_description = text || 'Custom scene from uploaded reference image';
     payload.message.image = {
-      base64: image.base64,
-      filename: image.filename,
-      mime_type: image.type,
+      base64: pendingScene.base64,
+      filename: pendingScene.filename,
+      mime_type: pendingScene.type,
     };
   }
 
-  // Send to webhook
+  // Clear inputs
+  input.value = '';
+  autoResize(input);
+  removeScene();
+  clearSelectedProduct();
+
+  // Send
   isWaiting = true;
   showTyping(true);
   document.getElementById('sendBtn').disabled = true;
 
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (settings.webhookAuth) {
-      headers['Authorization'] = settings.webhookAuth;
-    }
-
     const response = await fetch(settings.webhookUrl, {
       method: 'POST',
-      headers: headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      throw new Error('Webhook returned ' + response.status + ': ' + (await response.text()).slice(0, 200));
+      throw new Error('Server returned ' + response.status + ': ' + (await response.text()).slice(0, 200));
     }
 
-    const contentType = response.headers.get('content-type') || '';
-    let data;
-
-    if (contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      const rawText = await response.text();
-      data = { reply: rawText };
-    }
-
+    const data = await response.json();
     showTyping(false);
 
-    // Handle response — support multiple formats
-    const reply = data.reply || data.message || data.text || data.response || '';
-    const replyImage = data.image_url || data.imageUrl || data.image || null;
-
-    if (reply || replyImage) {
-      addMessage(reply, 'received', replyImage);
-    } else if (typeof data === 'string' && data.length > 0) {
-      addMessage(data, 'received');
-    } else {
-      addMessage(JSON.stringify(data, null, 2), 'received');
+    // Get image URL
+    let replyImgUrl = null;
+    const base = settings.serverBase;
+    if (data.generated_image_url && base) {
+      replyImgUrl = base + data.generated_image_url;
+    } else if (data.image_url) {
+      replyImgUrl = data.image_url;
     }
+
+    // Build prompt blocks HTML
+    const promptHtml = buildPromptHtml(data.image_prompt, data.video_prompt);
+
+    // Reply text
+    const reply = data.reply || data.message || data.text || '';
+
+    addMessage(reply, 'received', replyImgUrl, promptHtml);
 
   } catch (err) {
     showTyping(false);
@@ -708,9 +1274,9 @@ async function sendMessage() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Input handling
-// ---------------------------------------------------------------------------
+// ============================================================
+// INPUT
+// ============================================================
 function handleKey(event) {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
@@ -723,9 +1289,6 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 100) + 'px';
 }
 
-// ---------------------------------------------------------------------------
-// Clear chat
-// ---------------------------------------------------------------------------
 function clearChat() {
   const chatArea = document.getElementById('chatArea');
   chatArea.innerHTML = '';
@@ -735,14 +1298,40 @@ function clearChat() {
   chatArea.appendChild(sep);
   sessionId = generateId();
   localStorage.setItem('cws_session_id', sessionId);
-  addSystemMsg('Chat cleared. New session: ' + sessionId.slice(0, 12) + '...');
+  addSystemMsg('Chat cleared.');
 }
 
-// ---------------------------------------------------------------------------
-// Init
-// ---------------------------------------------------------------------------
-updateConnStatus();
-document.getElementById('msgInput').focus();
+// ============================================================
+// SERVER STATUS CHECK (hero page)
+// ============================================================
+async function checkServer() {
+  const base = localStorage.getItem('cws_server_base') || '';
+  const el = document.getElementById('serverStatus');
+  if (!base) {
+    el.textContent = 'Server not configured';
+    el.style.color = 'var(--text-muted)';
+    return;
+  }
+  try {
+    const r = await fetch(base + '/health', { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      el.textContent = 'Server online';
+      el.style.color = 'var(--accent)';
+    } else {
+      el.textContent = 'Server error';
+      el.style.color = 'var(--danger)';
+    }
+  } catch {
+    el.textContent = 'Server offline';
+    el.style.color = 'var(--danger)';
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+checkServer();
+setInterval(checkServer, 15000);
 </script>
 </body>
 </html>

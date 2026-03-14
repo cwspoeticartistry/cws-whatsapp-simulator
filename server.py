@@ -1,26 +1,21 @@
 """
 CWS WhatsApp Simulator — Local Webhook Server
 -----------------------------------------------
-A Flask server that receives messages from the WhatsApp simulator web app
-and processes them through the existing image generation workflow.
+Flask server connecting the WhatsApp simulator to the existing image generation workflow.
 
-This acts as a local stand-in for the n8n webhook, running the same logic:
-1. Receive message from simulator
-2. Identify product from message text
-3. Look up catalogue + product cache
-4. Assemble image + video prompts (7-layer structure)
-5. Generate image via kie.ai API
-6. Log to Notion
-7. Return response to simulator
+Endpoints:
+  GET  /                        — Server status
+  GET  /health                  — Health check
+  POST /webhook                 — Main chat webhook (processes messages)
+  GET  /api/catalogue           — Full product catalogue with image URLs
+  GET  /api/product-image/<fn>  — Serves product images
+  GET  /api/generated/<fn>      — Serves generated images
 
 Usage:
-    cd "C:\\Users\\Dell\\Documents\\Dad\\Promo Images\\whatsapp-simulator"
     "C:\\Users\\Dell\\Documents\\Website Development\\.venv\\Scripts\\python.exe" server.py
-
-The server runs on http://0.0.0.0:5055 — accessible from your phone
-on the same WiFi network via http://<your-computer-ip>:5055/webhook
 """
 
+import base64
 import json
 import os
 import re
@@ -28,8 +23,9 @@ import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 
 # ---------------------------------------------------------------------------
@@ -43,7 +39,6 @@ PRODUCTS_DIR = PROJECT_ROOT / "products"
 GENERATED_DIR = PROJECT_ROOT / "generated"
 ENV_PATH = Path(r"C:\Users\Dell\Documents\Website Development\.env")
 
-# Add scripts dir to path so we can import the generation/notion modules
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 # ---------------------------------------------------------------------------
@@ -61,14 +56,85 @@ def load_env():
 load_env()
 
 # ---------------------------------------------------------------------------
+# Product image mapping
+# ---------------------------------------------------------------------------
+IMAGE_MAP = {
+    "Blood Circulations": "Herbal Vitality & Flow Support - Blood Circulation.png",
+    "Blood Purifying": "Herbal Vitality Blend - Blood Purification.png",
+    "Bones, Joints and Gout": "Herbal Duo Comfort Blend - Bones, Joints and Gout.png",
+    "Cholesterol Control": "Herbal Clarity Blend - Cholesterol Control.png",
+    "Asthma & Lung Repair": "Asthma & Lung Repair.psd.png",
+    "Black Seed Oil Capsules": "Dr Gee Black Seed Capsules.psd.png",
+    "Dr Gee Omega 3": "Omega-3 Softgel Capsules.psd.png",
+    "Iron Essence Capsules": "Iron essence capsules.psd.png",
+    "Joint Harmony Capsules": "Daily Joint Comfort - Joint Harmony Capsules.psd.png",
+    "Magnesium Complex": "Magnesium Complex - Herbal Mineral Blend.psd.png",
+    "QS-8 with Nano Technology": "With Nano Technology.psd.png",
+    "QS8 Daily Support": "QS8 Daily Support - QS 8 Capsules.psd.png",
+    "Restore Plus": "Daily Balance Capsules - Restore Plus.psd.png",
+    "RPG 4 FLU": "RPG 4 FLU - Herbal Energy Blend.psd.png",
+    "Shilajit Capsules": "Shilajit Capsules.psd.png",
+    "Sleep Aid": "Sleep Aid - Herbal Relaxation Blend.psd.png",
+    "Soursop Capsules": "Soursop Capsules.psd.png",
+    "Detox": "Herbal Vitality Powder - Detox.psd.png",
+    "GERD Relief Powder": "Herbal Ease Powder - GERD Relief Powder.psd.png",
+    "Liver & Kidney Tonic Powder": "Herbal Vitality Powder - Detox.psd.png",
+    "Man's Powder": "Men's Herbal Powder - Man's Powder.psd.png",
+    "Sugar Ease": "Sugar Ease - Herbal Harmony Blend.psd.png",
+    "Advanced Kidney, Liver & Bladder": "Advanced Herbal Vitality Syrup - Advanced Kidney, Liver & Bladder.psd.png",
+    "Eye and Ear Drops": "Botanical Drops - Eye and Ear Drops.psd.png",
+    "Kidney Liver and Bladder Tincture": "Herbal Renewal Tonic - Kidney, Liver and Bladder Tincture.psd.png",
+    "QS 8 Spray": "QS 8 Spray.psd.png",
+    "QS-8 Nasal Spray": "QS 8 Nasal Spray.psd.png",
+    "QS 8 Throat Spray": "QS 8 Throat Spray.psd.png",
+    "Herbal Boost Blend": "Herbal Vitality Tonic - Herbal Boost Blend.psd.png",
+    "Libido Tonic": "Herbal Wellness Tonic - Libido Tonic.psd.png",
+    "Chromium Glucobalance": "Chromium Glucobalance - Daily Metabolic Balance.psd.png",
+    "QS7 Syrup (Kalonji / Black Seed Oil)": "QS 7 Syrup.psd.png",
+    "Man's Soup": "Men's Herbal Soup Blend - Man's Soup.psd.png",
+    "Ulcer Solution": "Ulcer Solution - Herbal Comfort Blend.psd.png",
+    "Ulcer Solutions": "Ulcer Solutions.psd.png",
+    "Blood Combo": "Blood Combo.png",
+    "Bones & Joint Combo": "Bones & Joint Combo.png",
+    "Detox, Bones and Joints Combo": "Detox, Bones and Joints Combo.png",
+    "Liver and Kidney Combo": "Liver and Kidney Combo.png",
+    "Men's Combo": "Mens Combo.png",
+    "Piles Combo": "Piles Combo.png",
+    "Woman's Combo": "Womens Combo.png",
+}
+
+# Map old/file names to catalogue names for display
+OLD_NAMES = {
+    "Blood Circulations": "Herbal Vitality & Flow Support",
+    "Blood Purifying": "Herbal Vitality Blend",
+    "Advanced Kidney, Liver & Bladder": "Levels 3 / Advanced Herbal Vitality Syrup",
+    "QS-8 with Nano Technology": "With Nano Technology",
+    "Iron Essence Capsules": "Iron essence capsules",
+}
+
+
+def find_image_for_product(name):
+    """Find the product image filename for a given product name."""
+    if name in IMAGE_MAP:
+        fn = IMAGE_MAP[name]
+        if (PRODUCTS_DIR / fn).exists():
+            return fn
+    # Fuzzy fallback — check for partial match in filenames
+    name_lower = name.lower()
+    for f in PRODUCTS_DIR.iterdir():
+        if f.suffix.lower() in ('.png', '.jpg', '.jpeg'):
+            if name_lower in f.stem.lower() or any(w in f.stem.lower() for w in name_lower.split() if len(w) > 3):
+                return f.name
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Load catalogue and cache
 # ---------------------------------------------------------------------------
 def load_catalogue():
-    """Parse dr-gee-catalogue.md into a searchable list."""
     cat_path = REFS_DIR / "dr-gee-catalogue.md"
     if not cat_path.exists():
         return []
-
     products = []
     current = {}
     with open(cat_path, encoding="utf-8") as f:
@@ -95,15 +161,12 @@ def load_catalogue():
                 current["variant"] = line.split(":**")[1].strip()
             elif line.startswith("- **Components:**"):
                 current["components"] = line.split(":**")[1].strip()
-
     if current.get("name"):
         products.append(current)
-
     return products
 
 
 def load_cache():
-    """Load product-prompt-cache.json."""
     cache_path = REFS_DIR / "product-prompt-cache.json"
     if cache_path.exists():
         with open(cache_path, encoding="utf-8") as f:
@@ -112,33 +175,25 @@ def load_cache():
 
 
 def find_product(text, catalogue):
-    """Find best matching product from message text."""
     text_lower = text.lower().strip()
-
-    # Direct name match
     for p in catalogue:
         if p["name"].lower() in text_lower:
             return p
-
-    # Word overlap scoring
     text_words = set(re.findall(r"\w+", text_lower))
     best_score = 0
     best_match = None
-
     for p in catalogue:
         name_words = set(re.findall(r"\w+", p["name"].lower()))
-        # Remove common words
         name_words -= {"and", "the", "for", "with", "of", "a", "in"}
         overlap = len(text_words & name_words)
         if overlap > best_score and overlap >= 1:
             best_score = overlap
             best_match = p
-
     return best_match
 
 
 # ---------------------------------------------------------------------------
-# Prompt assembly (mirrors SKILL.md 7-layer structure)
+# Prompt assembly
 # ---------------------------------------------------------------------------
 DEFAULT_STYLE = (
     "Premium South African herbal wellness brand aesthetic. Deep teal-to-charcoal "
@@ -164,14 +219,16 @@ TECHNICAL_SPECS = (
 )
 
 
-def assemble_prompt(product, cache_entry=None, extras=None):
-    """Assemble the 7-layer image prompt."""
+def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None):
     name = product["name"]
     price = product.get("price", 0)
     description = product.get("description", "")
 
-    # Layer 1 — Style
-    layer1 = DEFAULT_STYLE
+    # Layer 1 — Style (use scene description if provided)
+    if scene_desc:
+        layer1 = f"Scene style based on the uploaded reference image: {scene_desc}. Maintain premium product photography quality with professional lighting."
+    else:
+        layer1 = DEFAULT_STYLE
 
     # Layer 2 — Product
     if cache_entry:
@@ -202,10 +259,7 @@ def assemble_prompt(product, cache_entry=None, extras=None):
             f"wellness product. {description}"
         )
 
-    # Layer 3 — Composition
     layer3 = DEFAULT_COMPOSITION
-
-    # Layer 4 — Text overlay
     layer4 = (
         "CRITICAL — the following text must appear letter-perfect in the image with "
         "no alterations, misspellings, or creative reinterpretation:\n"
@@ -213,24 +267,17 @@ def assemble_prompt(product, cache_entry=None, extras=None):
         f"Price: R{price}\n"
         "Brand: Dr Gee"
     )
-
-    # Layer 5 — Additional elements
     layer5 = extras if extras else ""
-
-    # Layer 6 — Technical
     layer6 = TECHNICAL_SPECS
 
-    # Combine
     layers = [layer1, layer2, layer3, layer4]
     if layer5:
         layers.append(layer5)
     layers.append(layer6)
-
     return "\n\n".join(layers)
 
 
 def assemble_video_prompt(product, scene_desc="deep teal gradient background"):
-    """Generate companion video prompt."""
     name = product["name"]
     return (
         f"A smooth, slow cinematic product video for Dr Gee herbal wellness. The scene "
@@ -258,87 +305,144 @@ def assemble_video_prompt(product, scene_desc="deep teal gradient background"):
 # Flask app
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
-CORS(app)  # Allow simulator to call from any origin
+CORS(app)
 
 catalogue = load_catalogue()
 cache = load_cache()
 
+# Build enriched catalogue with image info
+def build_enriched_catalogue():
+    enriched = []
+    for p in catalogue:
+        name = p["name"]
+        img_file = find_image_for_product(name)
+        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+        cache_entry = None
+        for cs, ce in cache.items():
+            if ce.get("product_name", "").lower() == name.lower():
+                cache_entry = ce
+                break
+        enriched.append({
+            "name": name,
+            "product_line": p.get("product_line", ""),
+            "price": p.get("price", 0),
+            "description": p.get("description", ""),
+            "sku": p.get("sku", ""),
+            "variant": p.get("variant", ""),
+            "components": p.get("components", ""),
+            "slug": slug,
+            "old_name": OLD_NAMES.get(name, p.get("product_line", "")),
+            "image_file": img_file,
+            "image_url": f"/api/product-image/{quote(img_file)}" if img_file else None,
+            "cached": cache_entry is not None,
+            "has_visual_desc": bool(cache_entry),
+        })
+    return enriched
+
+enriched_catalogue = build_enriched_catalogue()
+
 print(f"\n[CWS Server] Loaded {len(catalogue)} products from catalogue")
 print(f"[CWS Server] Loaded {len(cache)} cached product descriptions")
+print(f"[CWS Server] {sum(1 for p in enriched_catalogue if p['image_file'])} products have images")
 
 
 @app.route("/", methods=["GET"])
 def index():
     return jsonify({
-        "service": "CWS WhatsApp Simulator Webhook",
+        "service": "CWS Simulator Workspace — Local Server",
         "status": "running",
         "products_loaded": len(catalogue),
+        "products_with_images": sum(1 for p in enriched_catalogue if p["image_file"]),
         "cached_products": len(cache),
     })
 
 
+@app.route("/api/catalogue", methods=["GET"])
+def api_catalogue():
+    """Full product catalogue with image URLs and metadata."""
+    return jsonify(enriched_catalogue)
+
+
+@app.route("/api/product-image/<path:filename>", methods=["GET"])
+def product_image(filename):
+    """Serve product images."""
+    return send_from_directory(str(PRODUCTS_DIR), filename)
+
+
+@app.route("/api/generated/<path:filename>", methods=["GET"])
+def generated_image(filename):
+    """Serve generated images."""
+    return send_from_directory(str(GENERATED_DIR), filename)
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    """Main webhook endpoint — processes simulator messages."""
+    """Main chat webhook — processes simulator messages."""
     try:
         data = request.get_json(force=True)
         msg_text = data.get("message", {}).get("text", "").strip()
-        msg_type = data.get("message", {}).get("type", "text")
+        msg_image = data.get("message", {}).get("image", None)
         sender = data.get("sender", {}).get("name", "User")
-        session_id = data.get("session_id", "unknown")
+        selected_product = data.get("selected_product", None)
+        scene_description = data.get("scene_description", None)
 
         print(f"\n[Webhook] From {sender}: {msg_text[:80]}")
+        if selected_product:
+            print(f"[Webhook] Pre-selected product: {selected_product}")
 
-        if not msg_text:
-            return jsonify({"reply": "I received your message but it was empty. Please tell me which product you'd like a promo image for."})
+        if not msg_text and not selected_product:
+            return jsonify({"reply": "I received your message but it was empty. Please tell me which product you'd like a promo image for, or use the catalogue to select one."})
 
-        # Check if it's a greeting or general message
+        # Greetings
         greetings = ["hi", "hello", "hey", "howzit", "good morning", "good afternoon"]
         if msg_text.lower().strip() in greetings:
-            product_list = "\n".join([f"  - {p['name']} (R{p.get('price', '?')})" for p in catalogue[:10]])
             return jsonify({
                 "reply": (
                     f"Hello {sender}! Welcome to the Dr Gee promo image generator.\n\n"
-                    f"Tell me which product you'd like a social media image for. "
-                    f"For example: 'Create a promo image for Blood Circulation'\n\n"
-                    f"Here are some products:\n{product_list}\n\n"
-                    f"...and {len(catalogue) - 10} more. Just name any Dr Gee product!"
+                    f"You can:\n"
+                    f"  1. Type a product name (e.g., 'Blood Circulation promo')\n"
+                    f"  2. Use the catalogue button to browse and select products\n"
+                    f"  3. Upload a scene image for custom styling\n\n"
+                    f"I'll generate a 3:4 portrait promo image and video prompt for you."
                 )
             })
 
-        # Check for "list" or "products" or "catalogue"
+        # List products
         if any(kw in msg_text.lower() for kw in ["list", "products", "catalogue", "catalog", "all products"]):
             product_list = "\n".join([f"  - {p['name']} (R{p.get('price', '?')})" for p in catalogue])
             return jsonify({"reply": f"Dr Gee Product Catalogue:\n\n{product_list}"})
 
-        # Try to find a product
-        product = find_product(msg_text, catalogue)
+        # Find product — either pre-selected from catalogue or from text
+        product = None
+        if selected_product:
+            for p in catalogue:
+                if p["name"] == selected_product:
+                    product = p
+                    break
+        if not product:
+            product = find_product(msg_text, catalogue)
 
         if not product:
             return jsonify({
                 "reply": (
-                    f"I couldn't identify a specific product from your message. "
-                    f"Could you tell me the exact product name?\n\n"
-                    f"Try something like:\n"
-                    f"  'Create a promo for Blood Circulation'\n"
-                    f"  'Make a social image for Shilajit Capsules'\n"
-                    f"  'Promo image for QS8 Daily Support'"
+                    "I couldn't identify a specific product from your message.\n\n"
+                    "Try using the catalogue button to browse products with images, "
+                    "or type the exact product name."
                 )
             })
 
-        # Product found — assemble prompt
+        # Product found
         name = product["name"]
         price = product.get("price", 0)
-        sku = product.get("sku", "")
 
         # Find cache entry
         cache_entry = None
-        for slug, entry in cache.items():
+        for slug_key, entry in cache.items():
             if entry.get("product_name", "").lower() == name.lower():
                 cache_entry = entry
                 break
 
-        # Check for extras in message
+        # Check for extras
         extras = None
         extra_keywords = {
             "sale": "Add a bold sale badge in the upper-right corner.",
@@ -353,18 +457,21 @@ def webhook():
                 extras = extra
                 break
 
-        # Assemble prompts
-        image_prompt = assemble_prompt(product, cache_entry, extras)
-        video_prompt = assemble_video_prompt(product)
+        # Use user's message as scene enhancement if not just a product name
+        scene_text = scene_description
+        if not scene_text and msg_text and len(msg_text) > len(name) + 10:
+            scene_text = msg_text
 
-        # Build slug
+        # Assemble prompts
+        image_prompt = assemble_prompt(product, cache_entry, extras, scene_text)
+        video_prompt = assemble_video_prompt(product, scene_text or "deep teal gradient background")
         slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
         print(f"[Webhook] Product: {name} (R{price})")
         print(f"[Webhook] Cache: {'hit' if cache_entry else 'miss'}")
-        print(f"[Webhook] Prompt length: {len(image_prompt)} chars")
+        print(f"[Webhook] Scene: {scene_text[:60] if scene_text else 'default'}")
 
-        # Try to generate image
+        # Generate image
         image_url = None
         local_path = None
         notion_url = None
@@ -381,12 +488,13 @@ def webhook():
             local_path = result.get("local_path")
             image_url = result.get("image_url")
             gen_status = "generated" if image_url else "placeholder"
-            print(f"[Webhook] Generation: {gen_status}")
         except Exception as e:
             print(f"[Webhook] Generation error: {e}")
             gen_status = "error"
 
-        # Try Notion logging
+        # Notion logging
+        img_file = find_image_for_product(name)
+        ref_images = [img_file] if img_file else []
         try:
             from post_to_notion import post_to_notion
             notion_url = post_to_notion(
@@ -395,41 +503,35 @@ def webhook():
                 local_path=local_path or "N/A",
                 image_prompt=image_prompt,
                 video_prompt=video_prompt,
-                reference_images=[],
+                reference_images=ref_images,
             )
-            print(f"[Webhook] Notion: {notion_url}")
         except Exception as e:
             print(f"[Webhook] Notion error: {e}")
 
         # Build response
-        reply_parts = [
-            f"Promo image request for *{name}* (R{price}) received!",
-            "",
-        ]
-
+        reply_parts = [f"*{name}* (R{price}) — Promo image request processed!", ""]
         if gen_status == "generated":
-            reply_parts.append(f"Image generated successfully!")
-            reply_parts.append(f"Saved to: {local_path}")
+            reply_parts.append("Image generated successfully!")
         elif gen_status == "placeholder":
-            reply_parts.append("Image generation completed (placeholder saved).")
-            reply_parts.append(f"File: {local_path}")
+            reply_parts.append("Placeholder saved (generation pending).")
         elif gen_status == "error":
-            reply_parts.append("Image generation encountered an error. Prompt is ready for manual use.")
-        else:
-            reply_parts.append("Prompt assembled and ready.")
+            reply_parts.append("Generation error — prompt ready for manual use.")
 
         if notion_url:
-            reply_parts.append(f"\nNotion page: {notion_url}")
-
-        reply_parts.append(f"\nCache status: {'Cached' if cache_entry else 'Not cached — visual description from catalogue'}")
-        reply_parts.append(f"Prompt length: {len(image_prompt)} characters")
+            reply_parts.append(f"\nNotion: {notion_url}")
+        reply_parts.append(f"\nCache: {'Cached visual description' if cache_entry else 'Using catalogue description'}")
 
         response = {
             "reply": "\n".join(reply_parts),
+            "image_prompt": image_prompt,
+            "video_prompt": video_prompt,
+            "product": {"name": name, "price": price, "slug": slug},
         }
-
         if image_url:
             response["image_url"] = image_url
+        if local_path:
+            fn = Path(local_path).name
+            response["generated_image_url"] = f"/api/generated/{quote(fn)}"
 
         return jsonify(response)
 
@@ -438,42 +540,26 @@ def webhook():
         return jsonify({"reply": f"Server error: {str(e)}"}), 500
 
 
-@app.route("/products", methods=["GET"])
-def list_products():
-    """List all catalogue products."""
-    return jsonify([
-        {"name": p["name"], "price": p.get("price"), "sku": p.get("sku")}
-        for p in catalogue
-    ])
-
-
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()})
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("CWS_PORT", 5055))
     print(f"\n{'='*60}")
-    print(f"  CWS WhatsApp Simulator — Local Webhook Server")
+    print(f"  CWS Simulator Workspace — Local Server")
     print(f"  http://0.0.0.0:{port}")
-    print(f"  Webhook URL: http://localhost:{port}/webhook")
-    print(f"  (Use your computer's local IP for phone access)")
+    print(f"  Webhook: http://localhost:{port}/webhook")
+    print(f"  Catalogue API: http://localhost:{port}/api/catalogue")
     print(f"{'='*60}\n")
-
-    # Show local IP for phone access
     try:
         import socket
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         local_ip = s.getsockname()[0]
         s.close()
-        print(f"  Phone URL: http://{local_ip}:{port}/webhook")
-        print(f"  Simulator: open index.html, set webhook to above URL\n")
+        print(f"  Phone: http://{local_ip}:{port}\n")
     except Exception:
         pass
-
     app.run(host="0.0.0.0", port=port, debug=False)
