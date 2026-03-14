@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CWS WhatsApp Simulator</title>
+<style>
+  :root {
+    --wa-green: #075e54;
+    --wa-green-light: #128c7e;
+    --wa-teal: #25d366;
+    --wa-bg: #efeae2;
+    --wa-chat-bg: #e5ddd5;
+    --wa-sent: #dcf8c6;
+    --wa-received: #ffffff;
+    --wa-header: #075e54;
+    --wa-input-bg: #f0f0f0;
+    --wa-text: #303030;
+    --wa-time: #999;
+    --wa-dark-bg: #0b141a;
+    --wa-dark-chat: #0b141a;
+    --wa-dark-sent: #005c4b;
+    --wa-dark-received: #202c33;
+    --wa-dark-text: #e9edef;
+    --wa-dark-input: #2a3942;
+    --wa-dark-header: #1f2c34;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--wa-bg);
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--wa-text);
+  }
+
+  /* Header */
+  .header {
+    background: var(--wa-header);
+    color: white;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    z-index: 10;
+  }
+
+  .header-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--wa-green-light);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .header-info { flex: 1; }
+  .header-name { font-size: 16px; font-weight: 600; }
+  .header-status { font-size: 12px; opacity: 0.8; }
+
+  .header-actions { display: flex; gap: 8px; }
+  .header-btn {
+    background: none; border: none; color: white;
+    padding: 8px; cursor: pointer; border-radius: 50%;
+    font-size: 18px; line-height: 1;
+  }
+  .header-btn:hover { background: rgba(255,255,255,0.1); }
+
+  /* Chat area */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px;
+    background: var(--wa-chat-bg);
+    background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c5bfb2' fill-opacity='0.08'%3E%3Cpath d='M20 20h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8z'/%3E%3Cpath d='M20 60h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8zm40 0h8v8h-8z'/%3E%3C/g%3E%3C/svg%3E");
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Messages */
+  .msg {
+    max-width: 85%;
+    padding: 6px 8px 4px;
+    border-radius: 8px;
+    position: relative;
+    word-wrap: break-word;
+    line-height: 1.4;
+    font-size: 14.5px;
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+  }
+
+  .msg-sent {
+    align-self: flex-end;
+    background: var(--wa-sent);
+    border-top-right-radius: 0;
+  }
+
+  .msg-received {
+    align-self: flex-start;
+    background: var(--wa-received);
+    border-top-left-radius: 0;
+  }
+
+  .msg-text { margin-bottom: 2px; }
+
+  .msg-image {
+    max-width: 100%;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    cursor: pointer;
+  }
+
+  .msg-time {
+    font-size: 11px;
+    color: var(--wa-time);
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  .msg-sent .msg-time::after {
+    content: ' \u2713\u2713';
+    color: #53bdeb;
+  }
+
+  .msg-system {
+    align-self: center;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    text-align: center;
+    max-width: 90%;
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    align-self: flex-start;
+    background: var(--wa-received);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-top-left-radius: 0;
+    display: none;
+    gap: 4px;
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+  }
+  .typing-indicator.active { display: flex; }
+  .typing-dot {
+    width: 8px; height: 8px;
+    background: #999;
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(1) { animation-delay: 0s; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  /* Input area */
+  .input-area {
+    background: var(--wa-input-bg);
+    padding: 6px 8px;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    min-height: 56px;
+  }
+
+  .input-actions {
+    display: flex;
+    gap: 2px;
+    padding-bottom: 8px;
+  }
+
+  .input-btn {
+    background: none; border: none;
+    color: #54656f;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .input-btn:hover { background: rgba(0,0,0,0.05); }
+
+  .input-wrapper {
+    flex: 1;
+    background: white;
+    border-radius: 24px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+  }
+
+  #msgInput {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    max-height: 100px;
+    line-height: 1.4;
+    background: transparent;
+    color: var(--wa-text);
+  }
+
+  .send-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--wa-teal);
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .send-btn:hover { background: var(--wa-green-light); }
+  .send-btn:disabled { background: #ccc; cursor: default; }
+
+  /* Image preview */
+  .image-preview {
+    display: none;
+    background: var(--wa-input-bg);
+    padding: 8px 16px;
+    border-top: 1px solid #ddd;
+  }
+  .image-preview.active { display: flex; align-items: center; gap: 8px; }
+  .image-preview img {
+    width: 48px; height: 48px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+  .image-preview .remove-img {
+    background: none; border: none;
+    color: #e74c3c; font-size: 20px;
+    cursor: pointer; padding: 4px;
+  }
+  .image-preview span { flex: 1; font-size: 13px; color: #666; }
+
+  /* Settings modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: var(--wa-header);
+  }
+
+  .modal label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 4px;
+    margin-top: 12px;
+  }
+
+  .modal input, .modal select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .modal input:focus, .modal select:focus {
+    outline: none;
+    border-color: var(--wa-green-light);
+  }
+
+  .modal-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .modal-btns button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-save {
+    background: var(--wa-teal);
+    color: white;
+  }
+  .btn-cancel {
+    background: #eee;
+    color: #333;
+  }
+
+  .conn-status {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .conn-connected { background: #d1fae5; color: #065f46; }
+  .conn-disconnected { background: #fee2e2; color: #991b1b; }
+
+  /* Date separator */
+  .date-sep {
+    align-self: center;
+    background: rgba(225,218,208,0.88);
+    color: #54656f;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    margin: 8px 0;
+  }
+
+  /* Scrollbar */
+  .chat-area::-webkit-scrollbar { width: 6px; }
+  .chat-area::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+  /* Hidden file input */
+  #imageInput { display: none; }
+
+  /* Responsive */
+  @media (min-width: 600px) {
+    body {
+      max-width: 420px;
+      margin: 0 auto;
+      border-left: 1px solid #ddd;
+      border-right: 1px solid #ddd;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-avatar">CWS</div>
+  <div class="header-info">
+    <div class="header-name">CWS Business Bot</div>
+    <div class="header-status" id="connStatus">
+      <span class="conn-status conn-disconnected" id="connBadge">Not configured</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="header-btn" onclick="clearChat()" title="Clear chat">&#x1f5d1;</button>
+    <button class="header-btn" onclick="openSettings()" title="Settings">&#x2699;</button>
+  </div>
+</div>
+
+<!-- Chat Area -->
+<div class="chat-area" id="chatArea">
+  <div class="date-sep">Today</div>
+  <div class="msg msg-system">
+    Welcome to the CWS WhatsApp Simulator. Tap the gear icon to set your webhook URL, then start chatting to test the workflow.
+  </div>
+</div>
+
+<!-- Typing Indicator -->
+<div class="typing-indicator" id="typingIndicator">
+  <div class="typing-dot"></div>
+  <div class="typing-dot"></div>
+  <div class="typing-dot"></div>
+</div>
+
+<!-- Image Preview -->
+<div class="image-preview" id="imagePreview">
+  <img id="previewImg" src="" alt="preview">
+  <span id="previewName">image.png</span>
+  <button class="remove-img" onclick="removeImage()">&#x2715;</button>
+</div>
+
+<!-- Input Area -->
+<div class="input-area">
+  <div class="input-actions">
+    <button class="input-btn" onclick="document.getElementById('imageInput').click()" title="Attach image">
+      &#x1F4CE;
+    </button>
+  </div>
+  <div class="input-wrapper">
+    <textarea id="msgInput" rows="1" placeholder="Type a message" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+  </div>
+  <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+    &#x27A4;
+  </button>
+</div>
+
+<input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(event)">
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>Webhook Settings</h2>
+
+    <label for="webhookUrl">n8n Webhook URL</label>
+    <input type="url" id="webhookUrl" placeholder="https://your-n8n.app.n8n.cloud/webhook/...">
+
+    <label for="businessId">Business ID</label>
+    <input type="text" id="businessId" placeholder="dr-gee" value="dr-gee">
+
+    <label for="senderId">Sender Phone (simulated)</label>
+    <input type="text" id="senderId" placeholder="+27831234567" value="+27831234567">
+
+    <label for="senderName">Sender Name</label>
+    <input type="text" id="senderName" placeholder="Test User" value="Test User">
+
+    <label for="channelType">Channel</label>
+    <select id="channelType">
+      <option value="whatsapp">WhatsApp</option>
+      <option value="web_chat">Web Chat</option>
+      <option value="email">Email</option>
+    </select>
+
+    <label for="webhookAuth">Auth Header (optional)</label>
+    <input type="text" id="webhookAuth" placeholder="Bearer your-token-here">
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let pendingImage = null;    // { base64, filename, type }
+let isWaiting = false;
+let sessionId = localStorage.getItem('cws_session_id') || generateId();
+localStorage.setItem('cws_session_id', sessionId);
+
+// ---------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------
+function loadSettings() {
+  return {
+    webhookUrl:  localStorage.getItem('cws_webhook_url')  || '',
+    businessId:  localStorage.getItem('cws_business_id')  || 'dr-gee',
+    senderId:    localStorage.getItem('cws_sender_id')    || '+27831234567',
+    senderName:  localStorage.getItem('cws_sender_name')  || 'Test User',
+    channelType: localStorage.getItem('cws_channel_type') || 'whatsapp',
+    webhookAuth: localStorage.getItem('cws_webhook_auth') || '',
+  };
+}
+
+function openSettings() {
+  const s = loadSettings();
+  document.getElementById('webhookUrl').value  = s.webhookUrl;
+  document.getElementById('businessId').value  = s.businessId;
+  document.getElementById('senderId').value    = s.senderId;
+  document.getElementById('senderName').value  = s.senderName;
+  document.getElementById('channelType').value = s.channelType;
+  document.getElementById('webhookAuth').value = s.webhookAuth;
+  document.getElementById('settingsModal').classList.add('active');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('active');
+}
+
+function saveSettings() {
+  localStorage.setItem('cws_webhook_url',  document.getElementById('webhookUrl').value.trim());
+  localStorage.setItem('cws_business_id',  document.getElementById('businessId').value.trim());
+  localStorage.setItem('cws_sender_id',    document.getElementById('senderId').value.trim());
+  localStorage.setItem('cws_sender_name',  document.getElementById('senderName').value.trim());
+  localStorage.setItem('cws_channel_type', document.getElementById('channelType').value);
+  localStorage.setItem('cws_webhook_auth', document.getElementById('webhookAuth').value.trim());
+  closeSettings();
+  updateConnStatus();
+  addSystemMsg('Settings saved. Webhook: ' + document.getElementById('webhookUrl').value.trim());
+}
+
+function updateConnStatus() {
+  const badge = document.getElementById('connBadge');
+  const url = localStorage.getItem('cws_webhook_url') || '';
+  if (url) {
+    badge.textContent = 'Connected';
+    badge.className = 'conn-status conn-connected';
+  } else {
+    badge.textContent = 'Not configured';
+    badge.className = 'conn-status conn-disconnected';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Messages
+// ---------------------------------------------------------------------------
+function getTime() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function generateId() {
+  return 'sim_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+function addMessage(text, type, imageDataUrl) {
+  const chatArea = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg msg-' + type;
+
+  let html = '';
+  if (imageDataUrl) {
+    html += '<img class="msg-image" src="' + imageDataUrl + '" alt="image" onclick="window.open(this.src)">';
+  }
+  if (text) {
+    html += '<div class="msg-text">' + escapeHtml(text) + '</div>';
+  }
+  html += '<div class="msg-time">' + getTime() + '</div>';
+  div.innerHTML = html;
+
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function addSystemMsg(text) {
+  const chatArea = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg msg-system';
+  div.textContent = text;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML.replace(/\n/g, '<br>');
+}
+
+function showTyping(show) {
+  const el = document.getElementById('typingIndicator');
+  el.classList.toggle('active', show);
+  if (show) {
+    const chatArea = document.getElementById('chatArea');
+    chatArea.appendChild(el);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Image handling
+// ---------------------------------------------------------------------------
+function handleImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    pendingImage = {
+      base64: e.target.result.split(',')[1],
+      dataUrl: e.target.result,
+      filename: file.name,
+      type: file.type,
+    };
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('previewName').textContent = file.name;
+    document.getElementById('imagePreview').classList.add('active');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function removeImage() {
+  pendingImage = null;
+  document.getElementById('imagePreview').classList.remove('active');
+}
+
+// ---------------------------------------------------------------------------
+// Send message
+// ---------------------------------------------------------------------------
+async function sendMessage() {
+  if (isWaiting) return;
+
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  const image = pendingImage;
+
+  if (!text && !image) return;
+
+  const settings = loadSettings();
+  if (!settings.webhookUrl) {
+    addSystemMsg('Please configure the webhook URL first (tap the gear icon).');
+    openSettings();
+    return;
+  }
+
+  // Show sent message
+  addMessage(text, 'sent', image ? image.dataUrl : null);
+  input.value = '';
+  autoResize(input);
+  removeImage();
+
+  // Build payload (mirrors WhatsApp webhook structure)
+  const payload = {
+    source: 'cws_simulator',
+    channel: settings.channelType,
+    session_id: sessionId,
+    timestamp: new Date().toISOString(),
+    sender: {
+      phone: settings.senderId,
+      name: settings.senderName,
+    },
+    business_id: settings.businessId,
+    message: {
+      type: image ? 'image' : 'text',
+      text: text || '',
+    },
+  };
+
+  if (image) {
+    payload.message.image = {
+      base64: image.base64,
+      filename: image.filename,
+      mime_type: image.type,
+    };
+  }
+
+  // Send to webhook
+  isWaiting = true;
+  showTyping(true);
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (settings.webhookAuth) {
+      headers['Authorization'] = settings.webhookAuth;
+    }
+
+    const response = await fetch(settings.webhookUrl, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error('Webhook returned ' + response.status + ': ' + (await response.text()).slice(0, 200));
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    let data;
+
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const rawText = await response.text();
+      data = { reply: rawText };
+    }
+
+    showTyping(false);
+
+    // Handle response — support multiple formats
+    const reply = data.reply || data.message || data.text || data.response || '';
+    const replyImage = data.image_url || data.imageUrl || data.image || null;
+
+    if (reply || replyImage) {
+      addMessage(reply, 'received', replyImage);
+    } else if (typeof data === 'string' && data.length > 0) {
+      addMessage(data, 'received');
+    } else {
+      addMessage(JSON.stringify(data, null, 2), 'received');
+    }
+
+  } catch (err) {
+    showTyping(false);
+    addSystemMsg('Error: ' + err.message);
+  } finally {
+    isWaiting = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Input handling
+// ---------------------------------------------------------------------------
+function handleKey(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+// ---------------------------------------------------------------------------
+// Clear chat
+// ---------------------------------------------------------------------------
+function clearChat() {
+  const chatArea = document.getElementById('chatArea');
+  chatArea.innerHTML = '';
+  const sep = document.createElement('div');
+  sep.className = 'date-sep';
+  sep.textContent = 'Today';
+  chatArea.appendChild(sep);
+  sessionId = generateId();
+  localStorage.setItem('cws_session_id', sessionId);
+  addSystemMsg('Chat cleared. New session: ' + sessionId.slice(0, 12) + '...');
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+updateConnStatus();
+document.getElementById('msgInput').focus();
+</script>
+</body>
+</html>
