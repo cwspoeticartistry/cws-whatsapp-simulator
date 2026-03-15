@@ -636,6 +636,207 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
 
+  /* Progress bubble */
+  .progress-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  .progress-steps { list-style: none; margin: 0; padding: 0; }
+  .progress-step {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 2px 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .progress-step.ps-done { color: #53e89b; }
+  .progress-step.ps-active { color: var(--text); }
+  .ps-icon { width: 16px; height: 16px; text-align: center; flex-shrink: 0; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .ps-spinner {
+    width: 10px; height: 10px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== STEP-SPECIFIC ANIMATIONS ===== */
+
+  /* Magnifying glass scan — product lookup */
+  .ps-anim-lookup {
+    width: 14px; height: 14px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .ps-anim-lookup::before {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    top: 0; left: 0;
+    animation: lookupPulse 1.2s ease-in-out infinite;
+  }
+  .ps-anim-lookup::after {
+    content: '';
+    position: absolute;
+    width: 5px; height: 2px;
+    background: var(--gold);
+    bottom: 0; right: 0;
+    transform: rotate(45deg);
+    transform-origin: left center;
+    animation: lookupHandle 1.2s ease-in-out infinite;
+  }
+  @keyframes lookupPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.6; }
+  }
+  @keyframes lookupHandle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Document fill — cache check */
+  .ps-anim-cache {
+    width: 10px; height: 13px;
+    border: 2px solid var(--gold);
+    border-radius: 1px 1px 2px 2px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .ps-anim-cache::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 0%;
+    background: rgba(212,168,67,0.5);
+    animation: cacheFill 1.8s ease-in-out infinite;
+  }
+  @keyframes cacheFill {
+    0% { height: 0%; }
+    70% { height: 100%; }
+    100% { height: 100%; opacity: 0; }
+  }
+
+  /* Text lines assembling — prompt building */
+  .ps-anim-prompt {
+    width: 12px; height: 13px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .ps-anim-prompt span {
+    display: block;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--gold);
+    transform-origin: left center;
+    animation: promptLine 1.5s ease-in-out infinite;
+  }
+  .ps-anim-prompt span:nth-child(1) { animation-delay: 0s; width: 100%; }
+  .ps-anim-prompt span:nth-child(2) { animation-delay: 0.2s; width: 75%; }
+  .ps-anim-prompt span:nth-child(3) { animation-delay: 0.4s; width: 90%; }
+  .ps-anim-prompt span:nth-child(4) { animation-delay: 0.6s; width: 60%; }
+  @keyframes promptLine {
+    0% { transform: scaleX(0); opacity: 0; }
+    40% { transform: scaleX(1); opacity: 1; }
+    80%, 100% { transform: scaleX(1); opacity: 0.5; }
+  }
+
+  /* Paintbrush stroke — image generation */
+  .ps-anim-generate {
+    width: 14px; height: 14px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .ps-anim-generate::before {
+    content: '🎨';
+    font-size: 11px;
+    position: absolute;
+    top: 0; left: 0;
+    animation: generateBrush 1s ease-in-out infinite alternate;
+  }
+  @keyframes generateBrush {
+    0% { transform: rotate(-15deg) scale(0.9); opacity: 0.7; }
+    100% { transform: rotate(15deg) scale(1.1); opacity: 1; }
+  }
+
+  /* Cloud upload — Notion logging */
+  .ps-anim-notion {
+    width: 14px; height: 12px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .ps-anim-notion::before {
+    content: '';
+    position: absolute;
+    width: 12px; height: 7px;
+    background: transparent;
+    border: 2px solid var(--gold);
+    border-radius: 6px 6px 0 0;
+    top: 0; left: 1px;
+  }
+  .ps-anim-notion::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    background: var(--gold);
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    animation: notionUpload 1s ease-in-out infinite;
+    border-radius: 1px;
+  }
+  @keyframes notionUpload {
+    0%, 100% { height: 0px; opacity: 0; bottom: 2px; }
+    50% { height: 6px; opacity: 1; bottom: 2px; }
+  }
+
+  /* File moving to folder — local save */
+  .ps-anim-save {
+    width: 14px; height: 12px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .ps-anim-save::before {
+    content: '';
+    position: absolute;
+    width: 12px; height: 9px;
+    border: 2px solid var(--gold);
+    border-radius: 0 2px 2px 2px;
+    bottom: 0; left: 1px;
+  }
+  .ps-anim-save::after {
+    content: '';
+    position: absolute;
+    width: 6px; height: 3px;
+    border-radius: 2px 2px 0 0;
+    border: 2px solid var(--gold);
+    border-bottom: none;
+    top: 0; left: 1px;
+  }
+  .ps-anim-save-dot {
+    position: absolute;
+    width: 4px; height: 5px;
+    background: var(--gold);
+    border-radius: 1px;
+    animation: saveFile 1.4s ease-in-out infinite;
+    top: 0; left: 5px;
+  }
+  @keyframes saveFile {
+    0% { opacity: 0; transform: translateY(-4px); }
+    40% { opacity: 1; transform: translateY(0); }
+    80%, 100% { opacity: 0; transform: translateY(4px); }
+  }
+
   /* Hidden file inputs */
   #imageInput, #sceneInput { display: none; }
 
@@ -764,8 +965,8 @@
     </div>
   </div>
 
-  <!-- Typing Indicator -->
-  <div class="typing-indicator" id="typingIndicator">
+  <!-- Typing indicator kept for simple replies -->
+  <div class="typing-indicator" id="typingIndicator" style="display:none">
     <div class="typing-dot"></div>
     <div class="typing-dot"></div>
     <div class="typing-dot"></div>
@@ -1169,6 +1370,158 @@ function copyPrompt(id) {
 }
 
 // ============================================================
+// PROGRESS BUBBLE
+// ============================================================
+function createProgressBubble() {
+  const chatArea = document.getElementById('chatArea');
+  const uid = 'pb_' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'msg msg-received';
+  div.id = uid;
+  div.innerHTML = `
+    <div class="msg-text">
+      <div class="progress-label">Dr Gee Image Generator</div>
+      <ul class="progress-steps" id="${uid}_steps"></ul>
+    </div>
+    <div class="msg-time" id="${uid}_time">${getTime()}</div>`;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return uid;
+}
+
+function detectStepType(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('look') || m.includes('search') || m.includes('find') || m.includes('product') || m.includes('connect')) return 'lookup';
+  if (m.includes('cache') || m.includes('check') || m.includes('visual')) return 'cache';
+  if (m.includes('prompt') || m.includes('assembl') || m.includes('build')) return 'prompt';
+  if (m.includes('generat') || m.includes('image') || m.includes('render') || m.includes('creat')) return 'generate';
+  if (m.includes('notion') || m.includes('log') || m.includes('upload')) return 'notion';
+  if (m.includes('sav') || m.includes('file') || m.includes('folder') || m.includes('complete') || m.includes('done')) return 'save';
+  return null;
+}
+
+function makeStepIcon(type) {
+  switch (type) {
+    case 'lookup':
+      return `<span class="ps-anim-lookup"></span>`;
+    case 'cache':
+      return `<span class="ps-anim-cache"></span>`;
+    case 'prompt':
+      return `<span class="ps-anim-prompt"><span></span><span></span><span></span><span></span></span>`;
+    case 'generate':
+      return `<span class="ps-anim-generate"></span>`;
+    case 'notion':
+      return `<span class="ps-anim-notion"></span>`;
+    case 'save':
+      return `<span class="ps-anim-save"><span class="ps-anim-save-dot"></span></span>`;
+    default:
+      return `<span class="ps-spinner"></span>`;
+  }
+}
+
+function addProgressStep(uid, message) {
+  const ul = document.getElementById(uid + '_steps');
+  if (!ul) return;
+  // Mark previous active step as done
+  const prev = ul.querySelector('.ps-active');
+  if (prev) {
+    prev.classList.remove('ps-active');
+    prev.classList.add('ps-done');
+    prev.querySelector('.ps-icon').innerHTML = '✓';
+  }
+  const type = detectStepType(message);
+  const li = document.createElement('li');
+  li.className = 'progress-step ps-active';
+  li.innerHTML = `<span class="ps-icon">${makeStepIcon(type)}</span><span>${esc(message)}</span>`;
+  ul.appendChild(li);
+  const chatArea = document.getElementById('chatArea');
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function finalizeProgressBubble(uid, data, settings) {
+  const ul = document.getElementById(uid + '_steps');
+  if (ul) {
+    const prev = ul.querySelector('.ps-active');
+    if (prev) {
+      prev.classList.remove('ps-active');
+      prev.classList.add('ps-done');
+      prev.querySelector('.ps-icon').innerHTML = '✓';
+    }
+  }
+
+  // Get image URL
+  let replyImgUrl = null;
+  const base = settings.serverBase;
+  if (data.generated_image_url && base) {
+    replyImgUrl = base + data.generated_image_url;
+  } else if (data.image_url) {
+    replyImgUrl = data.image_url;
+  }
+
+  const bubble = document.getElementById(uid);
+  if (!bubble) return;
+
+  const msgText = bubble.querySelector('.msg-text');
+
+  // Append image
+  if (replyImgUrl) {
+    const img = document.createElement('img');
+    img.className = 'msg-image';
+    img.src = replyImgUrl;
+    img.alt = 'Generated image';
+    img.onclick = () => viewImage(img.src);
+    img.onerror = () => { img.alt = '[Image failed to load]'; img.style.opacity = '0.3'; };
+    img.style.marginTop = '8px';
+    msgText.appendChild(img);
+  }
+
+  // Append reply text
+  if (data.reply) {
+    const p = document.createElement('div');
+    p.className = 'msg-text';
+    p.style.marginTop = '6px';
+    p.innerHTML = esc(data.reply).replace(/\n/g, '<br>');
+    msgText.appendChild(p);
+  }
+
+  // Append prompt blocks
+  const promptHtml = buildPromptHtml(data.image_prompt, data.video_prompt);
+  if (promptHtml) {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = promptHtml;
+    msgText.appendChild(wrapper);
+  }
+
+  // Notion link
+  if (data.notion_url) {
+    const a = document.createElement('div');
+    a.style.cssText = 'font-size:11px;color:var(--gold);margin-top:4px;';
+    a.innerHTML = `<a href="${esc(data.notion_url)}" target="_blank" style="color:var(--gold)">Open in Notion</a>`;
+    msgText.appendChild(a);
+  }
+
+  document.getElementById('chatArea').scrollTop = 999999;
+}
+
+function errorProgressBubble(uid, message) {
+  const ul = document.getElementById(uid + '_steps');
+  if (ul) {
+    const prev = ul.querySelector('.ps-active');
+    if (prev) {
+      prev.classList.remove('ps-active');
+      prev.querySelector('.ps-icon').innerHTML = '✗';
+      prev.style.color = 'var(--danger)';
+    }
+    const li = document.createElement('li');
+    li.className = 'progress-step';
+    li.style.color = 'var(--danger)';
+    li.innerHTML = `<span class="ps-icon">✗</span><span>${esc(message)}</span>`;
+    ul.appendChild(li);
+  }
+  document.getElementById('chatArea').scrollTop = 999999;
+}
+
+// ============================================================
 // SEND MESSAGE
 // ============================================================
 async function sendMessage() {
@@ -1210,17 +1563,10 @@ async function sendMessage() {
     },
   };
 
-  if (selectedProduct) {
-    payload.selected_product = selectedProduct.name;
-  }
-
+  if (selectedProduct) payload.selected_product = selectedProduct.name;
   if (pendingScene) {
     payload.scene_description = text || 'Custom scene from uploaded reference image';
-    payload.message.image = {
-      base64: pendingScene.base64,
-      filename: pendingScene.filename,
-      mime_type: pendingScene.type,
-    };
+    payload.message.image = { base64: pendingScene.base64, filename: pendingScene.filename, mime_type: pendingScene.type };
   }
 
   // Clear inputs
@@ -1229,9 +1575,7 @@ async function sendMessage() {
   removeScene();
   clearSelectedProduct();
 
-  // Send
   isWaiting = true;
-  showTyping(true);
   document.getElementById('sendBtn').disabled = true;
 
   try {
@@ -1246,27 +1590,86 @@ async function sendMessage() {
     }
 
     const data = await response.json();
-    showTyping(false);
 
-    // Get image URL
-    let replyImgUrl = null;
-    const base = settings.serverBase;
-    if (data.generated_image_url && base) {
-      replyImgUrl = base + data.generated_image_url;
-    } else if (data.image_url) {
-      replyImgUrl = data.image_url;
+    // Simple reply (greeting / list) — no job_id
+    if (data.reply && !data.job_id) {
+      addMessage(data.reply, 'received');
+      return;
     }
 
-    // Build prompt blocks HTML
-    const promptHtml = buildPromptHtml(data.image_prompt, data.video_prompt);
+    // Job-based response — connect to SSE stream (with poll fallback for HTTPS→HTTP)
+    if (data.job_id) {
+      const bubbleUid = createProgressBubble();
+      addProgressStep(bubbleUid, 'Connecting to server...');
 
-    // Reply text
-    const reply = data.reply || data.message || data.text || '';
+      const jid = data.job_id;
+      const streamUrl = settings.serverBase + '/api/stream/' + jid;
+      const pollUrl  = settings.serverBase + '/api/poll/'   + jid;
 
-    addMessage(reply, 'received', replyImgUrl, promptHtml);
+      let usedSSE = false;
+      let pollTimer = null;
+
+      function handleEvent(evt) {
+        if (evt.type === 'heartbeat') return;
+        if (evt.type === 'step') {
+          addProgressStep(bubbleUid, evt.message);
+        } else if (evt.type === 'done') {
+          if (pollTimer) clearInterval(pollTimer);
+          addProgressStep(bubbleUid, 'Complete!');
+          setTimeout(() => finalizeProgressBubble(bubbleUid, evt, settings), 300);
+        } else if (evt.type === 'error') {
+          if (pollTimer) clearInterval(pollTimer);
+          errorProgressBubble(bubbleUid, evt.message);
+        }
+      }
+
+      function startPolling() {
+        let done = false;
+        pollTimer = setInterval(async () => {
+          if (done) return;
+          try {
+            const r = await fetch(pollUrl);
+            const d = await r.json();
+            for (const evt of (d.events || [])) {
+              handleEvent(evt);
+              if (evt.type === 'done' || evt.type === 'error') { done = true; clearInterval(pollTimer); break; }
+            }
+          } catch(e) { /* server temporarily unreachable — keep polling */ }
+        }, 800);
+      }
+
+      // Try SSE first; if it errors immediately (mixed content), fall back to polling
+      let sseErrored = false;
+      const es = new EventSource(streamUrl);
+
+      es.onmessage = function(e) {
+        usedSSE = true;
+        handleEvent(JSON.parse(e.data));
+        if (JSON.parse(e.data).type === 'done' || JSON.parse(e.data).type === 'error') es.close();
+      };
+
+      es.onerror = function() {
+        es.close();
+        if (!usedSSE && !sseErrored) {
+          sseErrored = true;
+          // SSE never delivered a message — browser blocked it (mixed content). Use polling.
+          startPolling();
+        } else if (usedSSE) {
+          errorProgressBubble(bubbleUid, 'Lost connection to server.');
+        }
+      };
+
+      // Safety: if SSE hasn't delivered anything after 2s, assume it's blocked and start polling
+      setTimeout(() => {
+        if (!usedSSE && !sseErrored) {
+          sseErrored = true;
+          es.close();
+          startPolling();
+        }
+      }, 2000);
+    }
 
   } catch (err) {
-    showTyping(false);
     addSystemMsg('Error: ' + err.message);
   } finally {
     isWaiting = false;

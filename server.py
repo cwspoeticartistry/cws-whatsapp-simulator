@@ -18,14 +18,17 @@ Usage:
 import base64
 import json
 import os
+import queue as _queue_mod
 import re
 import sys
+import threading
 import traceback
+import uuid
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_from_directory, send_file, Response
 from flask_cors import CORS
 
 # ---------------------------------------------------------------------------
@@ -119,6 +122,11 @@ def find_image_for_product(name):
         fn = IMAGE_MAP[name]
         if (PRODUCTS_DIR / fn).exists():
             return fn
+        # Path check failed (possible encoding/case issue) — do case-insensitive scan
+        fn_lower = fn.lower()
+        for f in PRODUCTS_DIR.iterdir():
+            if f.name.lower() == fn_lower:
+                return f.name
     # Fuzzy fallback — check for partial match in filenames
     name_lower = name.lower()
     for f in PRODUCTS_DIR.iterdir():
@@ -207,8 +215,9 @@ DEFAULT_STYLE = (
 DEFAULT_COMPOSITION = (
     "3:4 portrait aspect ratio composition. Product centered in the lower two-thirds "
     "occupying approximately 60% of image height. Generous negative space in the upper "
-    "third for headline text. Straight-on front-facing shot with subtle 5-degree tilt. "
-    "Product on a barely-visible reflective surface with soft mirror effect."
+    "third reserved for post-production text overlay. Straight-on front-facing shot "
+    "with subtle 5-degree tilt. Product on a barely-visible reflective surface with "
+    "soft mirror effect."
 )
 
 TECHNICAL_SPECS = (
@@ -219,7 +228,7 @@ TECHNICAL_SPECS = (
 )
 
 
-def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None):
+def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img_file=None):
     name = product["name"]
     price = product.get("price", 0)
     description = product.get("description", "")
@@ -230,30 +239,46 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None):
     else:
         layer1 = DEFAULT_STYLE
 
+    _image_preamble = (
+        "The attached product image(s) are the exact visual reference for the "
+        "product(s) that must appear in this image. These attached photos are the "
+        "absolute ground truth for the shape, packaging design, label design, label "
+        "text, branding, colors, cap style, and all physical details of the products. "
+        "Reproduce every packaging detail IDENTICALLY — do not alter, redesign, "
+        "reimagine, stylize, or change anything about the product itself.\n\n"
+        "SEAMLESS SCENE INTEGRATION: The product photos were taken against a studio "
+        "background and may have rim lighting, colored highlights, or background "
+        "artifacts that do not match the new scene. Remove any background artifacts "
+        "from the product photos and relight the products naturally to match the "
+        "scene's lighting environment described above. The product surfaces, cap, "
+        "and bottle should pick up soft shadows, ambient reflections, and the "
+        "scene's light direction as if they were physically present in the scene.\n\n"
+    )
+
     # Layer 2 — Product
     if cache_entry:
+        # Full cache: attached image instruction + confirmed visual description
         visual_desc = cache_entry.get("visual_description", "")
         layer2 = (
-            "The attached product image(s) are the exact visual reference for the "
-            "product(s) that must appear in this image. These attached photos are the "
-            "absolute ground truth for the shape, packaging design, label design, label "
-            "text, branding, colors, cap style, and all physical details of the products. "
-            "Reproduce every packaging detail IDENTICALLY — do not alter, redesign, "
-            "reimagine, stylize, or change anything about the product itself.\n\n"
-            "SEAMLESS SCENE INTEGRATION: The product photos were taken against a studio "
-            "background and may have rim lighting, colored highlights, or background "
-            "artifacts that do not match the new scene. Remove any background artifacts "
-            "from the product photos and relight the products naturally to match the "
-            "scene's lighting environment described above. The product surfaces, cap, "
-            "and bottle should pick up soft shadows, ambient reflections, and the "
-            "scene's light direction as if they were physically present in the scene.\n\n"
-            f"REINFORCEMENT DESCRIPTION: {visual_desc}\n\n"
+            _image_preamble
+            + f"REINFORCEMENT DESCRIPTION: {visual_desc}\n\n"
+            "IMPORTANT: The attached product images are the definitive reference for "
+            "all packaging details. The only things that should adapt to the new scene "
+            "are: lighting on the product exterior, shadows cast by the product, and "
+            "surface reflections beneath it."
+        )
+    elif img_file:
+        # Image exists but not yet analyzed — attach it and use catalogue description
+        layer2 = (
+            _image_preamble
+            + f"REINFORCEMENT DESCRIPTION: {name} by Dr Gee — {description}\n\n"
             "IMPORTANT: The attached product images are the definitive reference for "
             "all packaging details. The only things that should adapt to the new scene "
             "are: lighting on the product exterior, shadows cast by the product, and "
             "surface reflections beneath it."
         )
     else:
+        # No image at all — text only
         layer2 = (
             f"The product is {name} by Dr Gee — a premium South African herbal "
             f"wellness product. {description}"
@@ -261,11 +286,13 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None):
 
     layer3 = DEFAULT_COMPOSITION
     layer4 = (
-        "CRITICAL — the following text must appear letter-perfect in the image with "
-        "no alterations, misspellings, or creative reinterpretation:\n"
-        f"Product name: {name}\n"
-        f"Price: R{price}\n"
-        "Brand: Dr Gee"
+        "TEXT RULE: Generate this image with NO text, words, characters, numbers, or "
+        "typography of any kind — except the text that is physically printed on the "
+        "product labels and packaging in the attached reference images. Do not add "
+        "product names, prices, taglines, sale badges, brand slogans, social handles, "
+        "website URLs, or any other copy anywhere in the image. All promotional text "
+        "will be applied as post-production overlays in Canva. The image must be a "
+        "clean, text-free visual suitable for text to be layered on top."
     )
     layer5 = extras if extras else ""
     layer6 = TECHNICAL_SPECS
@@ -277,27 +304,73 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None):
     return "\n\n".join(layers)
 
 
-def assemble_video_prompt(product, scene_desc="deep teal gradient background"):
+def assemble_video_prompt(product, cache_entry=None, scene_desc="premium wellness setting", img_file=None):
     name = product["name"]
+
+    # Build per-product locked elements from cache if available
+    if cache_entry:
+        visual = cache_entry.get("visual_description", "")
+        cap_hint = ""
+        if "white" in visual.lower() and "cap" in visual.lower():
+            cap_hint = "WHITE smooth screw cap"
+        elif "green" in visual.lower() and "cap" in visual.lower():
+            cap_hint = "FOREST GREEN smooth screw cap"
+        elif "black" in visual.lower() and "cap" in visual.lower():
+            cap_hint = "BLACK ribbed plastic screw cap"
+        else:
+            cap_hint = "cap as shown in source image"
+        locked_product = (
+            f"- {name}: {cap_hint}. Label reads exactly as printed on the physical "
+            f"packaging in the source image. All label text, logo, ornamental scrollwork, "
+            f"and packaging details must be reproduced exactly."
+        )
+    elif img_file:
+        # Image attached but not yet analyzed — reference the attached image
+        locked_product = (
+            f"- {name}: all cap color, label text, logo, ornamental scrollwork, and "
+            f"packaging details must match the attached source image exactly."
+        )
+    else:
+        locked_product = (
+            f"- {name}: all cap color, label text, logo, ornamental scrollwork, and "
+            f"packaging details must match the Dr Gee brand standard exactly."
+        )
+
     return (
-        f"A smooth, slow cinematic product video for Dr Gee herbal wellness. The scene "
-        f"is identical to the reference image — {scene_desc} with {name} product "
-        f"centered on a reflective surface. The products remain sharp, still, and "
-        f"perfectly in focus throughout the entire video.\n\n"
-        f"In the background, slightly out of frame at first, a well-dressed Black "
-        f"South African woman in her 30s wearing a soft neutral linen top moves "
-        f"naturally and unhurriedly in the background. She is always in soft bokeh "
-        f"blur — never in focus — appearing as warm, authentic lifestyle atmosphere "
-        f"rather than as the subject. She reaches past the products to pick up a cup. "
-        f"Her presence is calm, natural, and effortless — the kind of person who uses "
-        f"these products as part of a healthy daily routine.\n\n"
-        f"The camera performs a very slow, smooth push-in toward the products — moving "
-        f"approximately 10-15% closer over the duration of the clip. No shaking, no "
-        f"cuts. The lighting remains consistent with soft front-left diffused studio "
-        f"light. The overall mood is premium wellness lifestyle — warm, aspirational, "
-        f"and trustworthy.\n\n"
-        f"Duration: 6-8 seconds. Aspect ratio: 3:4 portrait. Cinematic colour grade: "
-        f"slightly warm and clean. No music needed."
+        f"The attached image is the ABSOLUTE GROUND TRUTH for this video. This is not "
+        f"a style reference — it is a locked frame. Every element in it must be "
+        f"reproduced identically in every frame of the video. The source image contains "
+        f"NO text overlays — do not add any.\n\n"
+        f"LOCKED ELEMENTS — must not change in any frame:\n\n"
+        f"PRODUCTS:\n{locked_product}\n"
+        f"All bottle shapes, sizes, label backgrounds, logo ornaments, cap colors, and "
+        f"packaging details must match the source image exactly. No alterations to any "
+        f"product packaging whatsoever.\n\n"
+        f"TEXT RULE: The source image contains NO text overlays — only the text "
+        f"physically printed on the product labels. Do NOT add, generate, render, or "
+        f"invent any text, words, characters, numbers, captions, subtitles, watermarks, "
+        f"or typography anywhere in this video. Not at the start, not at the end, not "
+        f"as a lower-third, not as a title card, not at the bottom of frame. Zero "
+        f"invented text. The ONLY readable text permitted is what is physically printed "
+        f"on the product labels.\n\n"
+        f"SCENE: {name} product on a premium surface in a {scene_desc}. Scene "
+        f"composition and all props remain unchanged throughout.\n\n"
+        f"The FIRST FRAME must be an exact photographic match of the attached source "
+        f"image. Every subsequent frame maintains the same product appearance and same "
+        f"scene layout.\n\n"
+        f"ANIMATION: A Black South African woman, 28-35, natural hair, warm neutral "
+        f"clothing, enters softly from the RIGHT edge of the frame. She is ALWAYS in "
+        f"heavy bokeh blur — never sharp, never in focus at any point in the video. "
+        f"She occupies no more than 15% of the frame width and remains at the far right "
+        f"edge only, never moving behind or in front of the product. She slowly reaches "
+        f"in from the right edge, briefly touches the product, then gently withdraws. "
+        f"Her movement is slow, graceful, and peripheral. She must never obscure any "
+        f"product, any label, or any packaging detail.\n\n"
+        f"The camera performs an extremely slow push-in — no more than 5% closer over "
+        f"the full duration. No cuts. No camera shake. Lighting holds constant. No "
+        f"colour grade changes — match the tone of the source image exactly.\n\n"
+        f"Duration: 7 seconds. Aspect ratio: 3:4 portrait. Photorealistic. Zero text "
+        f"overlays of any kind."
     )
 
 
@@ -306,6 +379,79 @@ def assemble_video_prompt(product, scene_desc="deep teal gradient background"):
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 CORS(app)
+
+# ---------------------------------------------------------------------------
+# SSE job progress tracking
+# ---------------------------------------------------------------------------
+_jobs: dict = {}
+_jobs_lock = threading.Lock()
+
+def _new_job():
+    """Create a new job queue. Returns (job_id, queue)."""
+    jid = uuid.uuid4().hex[:10]
+    q = _queue_mod.Queue()
+    with _jobs_lock:
+        _jobs[jid] = q
+    return jid, q
+
+def _emit(jid: str, msg_type: str, message: str, payload: dict | None = None):
+    """Push a progress event to the job queue."""
+    with _jobs_lock:
+        q = _jobs.get(jid)
+    if q:
+        q.put({"type": msg_type, "message": message, **(payload or {})})
+
+@app.route("/api/stream/<jid>")
+def stream_job(jid):
+    """SSE endpoint — streams job progress to the frontend."""
+    def generate():
+        with _jobs_lock:
+            q = _jobs.get(jid)
+        if not q:
+            yield f"data: {json.dumps({'type':'error','message':'Job not found'})}\n\n"
+            return
+        try:
+            while True:
+                try:
+                    item = q.get(timeout=300)
+                    yield f"data: {json.dumps(item)}\n\n"
+                    if item.get("type") in ("done", "error"):
+                        break
+                except _queue_mod.Empty:
+                    yield "data: {\"type\":\"heartbeat\"}\n\n"
+                    break
+        finally:
+            with _jobs_lock:
+                _jobs.pop(jid, None)
+
+    return Response(
+        generate(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+@app.route("/api/poll/<jid>")
+def poll_job(jid):
+    """Polling endpoint — returns all pending events for a job as JSON array.
+    Used as fallback when EventSource is blocked (HTTPS page → HTTP server).
+    """
+    with _jobs_lock:
+        q = _jobs.get(jid)
+    if not q:
+        return jsonify({"events": [{"type": "error", "message": "Job not found or expired"}]})
+    events = []
+    try:
+        while True:
+            item = q.get_nowait()
+            events.append(item)
+            if item.get("type") in ("done", "error"):
+                with _jobs_lock:
+                    _jobs.pop(jid, None)
+                break
+    except _queue_mod.Empty:
+        pass
+    return jsonify({"events": events})
+
 
 catalogue = load_catalogue()
 cache = load_cache()
@@ -377,23 +523,15 @@ def generated_image(filename):
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    """Main chat webhook — processes simulator messages."""
+    """Main chat webhook — returns job_id immediately, processes in background."""
     try:
         data = request.get_json(force=True)
         msg_text = data.get("message", {}).get("text", "").strip()
-        msg_image = data.get("message", {}).get("image", None)
         sender = data.get("sender", {}).get("name", "User")
         selected_product = data.get("selected_product", None)
         scene_description = data.get("scene_description", None)
 
-        print(f"\n[Webhook] From {sender}: {msg_text[:80]}")
-        if selected_product:
-            print(f"[Webhook] Pre-selected product: {selected_product}")
-
-        if not msg_text and not selected_product:
-            return jsonify({"reply": "I received your message but it was empty. Please tell me which product you'd like a promo image for, or use the catalogue to select one."})
-
-        # Greetings
+        # Handle simple replies synchronously (no job needed)
         greetings = ["hi", "hello", "hey", "howzit", "good morning", "good afternoon"]
         if msg_text.lower().strip() in greetings:
             return jsonify({
@@ -407,12 +545,42 @@ def webhook():
                 )
             })
 
-        # List products
         if any(kw in msg_text.lower() for kw in ["list", "products", "catalogue", "catalog", "all products"]):
             product_list = "\n".join([f"  - {p['name']} (R{p.get('price', '?')})" for p in catalogue])
             return jsonify({"reply": f"Dr Gee Product Catalogue:\n\n{product_list}"})
 
-        # Find product — either pre-selected from catalogue or from text
+        if not msg_text and not selected_product:
+            return jsonify({"reply": "Please tell me which product you'd like, or use the catalogue to select one."})
+
+        # Create job and start background processing
+        jid, _ = _new_job()
+        thread = threading.Thread(
+            target=_process_request,
+            args=(jid, data),
+            daemon=True,
+        )
+        thread.start()
+        return jsonify({"job_id": jid})
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"reply": f"Server error: {str(e)}"}), 500
+
+
+def _process_request(jid: str, data: dict):
+    """Background thread — runs the full pipeline and emits progress via SSE."""
+    def progress(msg):
+        _emit(jid, "step", msg)
+
+    try:
+        msg_text = data.get("message", {}).get("text", "").strip()
+        sender = data.get("sender", {}).get("name", "User")
+        selected_product = data.get("selected_product", None)
+        scene_description = data.get("scene_description", None)
+
+        progress("Received your request — looking up product...")
+
+        # Find product
         product = None
         if selected_product:
             for p in catalogue:
@@ -423,26 +591,26 @@ def webhook():
             product = find_product(msg_text, catalogue)
 
         if not product:
-            return jsonify({
-                "reply": (
-                    "I couldn't identify a specific product from your message.\n\n"
-                    "Try using the catalogue button to browse products with images, "
-                    "or type the exact product name."
-                )
-            })
+            _emit(jid, "error", "I couldn't identify a specific product. Try the catalogue browser or type the exact product name.")
+            return
 
-        # Product found
         name = product["name"]
         price = product.get("price", 0)
+        progress(f"Found: {name} (R{price})")
 
-        # Find cache entry
+        # Cache check
         cache_entry = None
         for slug_key, entry in cache.items():
             if entry.get("product_name", "").lower() == name.lower():
                 cache_entry = entry
                 break
 
-        # Check for extras
+        if cache_entry:
+            progress("Cache hit — visual description loaded")
+        else:
+            progress("No cache entry — using catalogue description")
+
+        # Extras
         extras = None
         extra_keywords = {
             "sale": "Add a bold sale badge in the upper-right corner.",
@@ -457,43 +625,46 @@ def webhook():
                 extras = extra
                 break
 
-        # Use user's message as scene enhancement if not just a product name
         scene_text = scene_description
         if not scene_text and msg_text and len(msg_text) > len(name) + 10:
             scene_text = msg_text
 
-        # Assemble prompts
-        image_prompt = assemble_prompt(product, cache_entry, extras, scene_text)
-        video_prompt = assemble_video_prompt(product, scene_text or "deep teal gradient background")
+        img_file = find_image_for_product(name)
         slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
-        print(f"[Webhook] Product: {name} (R{price})")
-        print(f"[Webhook] Cache: {'hit' if cache_entry else 'miss'}")
-        print(f"[Webhook] Scene: {scene_text[:60] if scene_text else 'default'}")
+        # Assemble prompts
+        progress("Building 7-layer image prompt...")
+        image_prompt = assemble_prompt(product, cache_entry, extras, scene_text, img_file=img_file)
+        progress("Building video prompt (v3 locked-elements)...")
+        video_prompt = assemble_video_prompt(product, cache_entry, scene_text or "premium wellness setting", img_file=img_file)
+
+        print(f"[Job {jid}] Product: {name} (R{price}) | Cache: {'hit' if cache_entry else 'miss'} | Ref: {img_file or 'none'}")
 
         # Generate image
         image_url = None
         local_path = None
         notion_url = None
-        gen_status = "prompt_only"
 
         try:
             from generate_social_image import generate_social_image
-            print(f"[Webhook] Starting kie.ai generation...")
+            ref_files = [img_file] if img_file else None
             result = generate_social_image(
                 prompt=image_prompt,
                 product_slug=slug,
                 output_dir=str(GENERATED_DIR),
+                product_image_files=ref_files,
+                on_progress=progress,
             )
             local_path = result.get("local_path")
             image_url = result.get("image_url")
-            gen_status = "generated" if image_url else "placeholder"
+            if image_url:
+                progress("Image saved locally")
         except Exception as e:
-            print(f"[Webhook] Generation error: {e}")
-            gen_status = "error"
+            print(f"[Job {jid}] Generation error: {e}")
+            progress(f"Generation error: {str(e)[:80]}")
 
         # Notion logging
-        img_file = find_image_for_product(name)
+        progress("Logging to Notion...")
         ref_images = [img_file] if img_file else []
         try:
             from post_to_notion import post_to_notion
@@ -506,38 +677,37 @@ def webhook():
                 reference_images=ref_images,
             )
         except Exception as e:
-            print(f"[Webhook] Notion error: {e}")
+            print(f"[Job {jid}] Notion error: {e}")
 
-        # Build response
-        reply_parts = [f"*{name}* (R{price}) — Promo image request processed!", ""]
-        if gen_status == "generated":
-            reply_parts.append("Image generated successfully!")
-        elif gen_status == "placeholder":
-            reply_parts.append("Placeholder saved (generation pending).")
-        elif gen_status == "error":
-            reply_parts.append("Generation error — prompt ready for manual use.")
-
+        # Build final payload
+        reply_parts = [f"*{name}* (R{price})"]
+        if image_url:
+            reply_parts.append("Image generated successfully")
+        else:
+            reply_parts.append("Prompt ready — generation may have failed")
         if notion_url:
-            reply_parts.append(f"\nNotion: {notion_url}")
-        reply_parts.append(f"\nCache: {'Cached visual description' if cache_entry else 'Using catalogue description'}")
+            reply_parts.append(f"Notion: {notion_url}")
+        reply_parts.append(f"Cache: {'Cached' if cache_entry else 'Live lookup'}")
 
-        response = {
+        payload = {
             "reply": "\n".join(reply_parts),
             "image_prompt": image_prompt,
             "video_prompt": video_prompt,
             "product": {"name": name, "price": price, "slug": slug},
         }
         if image_url:
-            response["image_url"] = image_url
+            payload["image_url"] = image_url
         if local_path:
             fn = Path(local_path).name
-            response["generated_image_url"] = f"/api/generated/{quote(fn)}"
+            payload["generated_image_url"] = f"/api/generated/{quote(fn)}"
+        if notion_url:
+            payload["notion_url"] = notion_url
 
-        return jsonify(response)
+        _emit(jid, "done", "Done!", payload)
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"reply": f"Server error: {str(e)}"}), 500
+        _emit(jid, "error", f"Unexpected error: {str(e)}")
 
 
 @app.route("/health", methods=["GET"])
