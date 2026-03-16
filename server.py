@@ -28,6 +28,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
+import requests as _requests
 from flask import Flask, request, jsonify, send_from_directory, send_file, Response
 from flask_cors import CORS
 
@@ -41,6 +42,9 @@ REFS_DIR = SKILL_ROOT / "references"
 PRODUCTS_DIR = PROJECT_ROOT / "products"
 GENERATED_DIR = PROJECT_ROOT / "generated"
 ENV_PATH = Path(r"C:\Users\Dell\Documents\Website Development\.env")
+CWS_SHARED = Path(r"C:\Users\Dell\.claude\skills\cws-shared")
+BUSINESS_STATE_DIR = CWS_SHARED / "state"
+OPERATIONS_LOG = CWS_SHARED / "logs" / "operations.jsonl"
 
 sys.path.insert(0, str(SCRIPTS_DIR))
 
@@ -57,6 +61,102 @@ def load_env():
                     os.environ.setdefault(key.strip(), val.strip().strip("\"'"))
 
 load_env()
+
+# ---------------------------------------------------------------------------
+# Scene analyser — OpenRouter / Gemini Flash
+# ---------------------------------------------------------------------------
+OPENROUTER_BASE = "https://openrouter.ai/api/v1/chat/completions"
+SCENE_ANALYSIS_MODEL = "google/gemini-2.0-flash-001"
+
+SCENE_ANALYSIS_SYSTEM = """You are a professional art director and image generation prompt engineer.
+Your job is to analyse a reference photograph and produce a precise scene brief that will be used
+to guide an AI image generator (kie.ai) to recreate the environment while swapping in a new product.
+
+IMPORTANT: The image may be a screenshot from a phone or social media app. Completely IGNORE any
+mobile UI chrome — status bars, navigation bars, like/share/comment buttons, follower counts, usernames,
+app interfaces, captions, or any overlay that is not part of the actual photograph. Analyse ONLY the
+photographic content itself — the background, lighting, surfaces, props, and scene composition.
+
+Output ONLY a JSON object with these keys — no markdown, no commentary:
+{
+  "background": "detailed description of the background/setting (room, outdoor, surface, walls, etc.)",
+  "lighting": "light direction, quality, colour temperature, shadows",
+  "surfaces": "what the product sits or is placed on (marble counter, wooden table, etc.)",
+  "atmosphere": "overall mood, colour palette, dominant hex colors, style (rustic, modern, clinical, warm, etc.)",
+  "subjects": "any people, hands, or living subjects visible and their position/action",
+  "props": "any other objects in the scene besides the main product",
+  "keep": "comma-separated list of elements that MUST be preserved exactly in the new image",
+  "change": "comma-separated list of elements the user wants replaced or modified",
+  "scene_prompt": "a single flowing paragraph (60-80 words) written as an image generation prompt that captures the full environment with specific colors, textures, and composition — do NOT mention any specific product, brand, or person by name"
+}"""
+
+def analyze_scene_image(b64_data: str, mime_type: str, user_request: str) -> dict | None:
+    """
+    Call OpenRouter (Gemini Flash) with the uploaded reference image + user request.
+    Returns a parsed dict of the scene brief, or None on failure.
+    Model: google/gemini-2.0-flash-001 — fast, cheap, excellent vision.
+    """
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        print("  [Scene Analyser] OPENROUTER_API_KEY not set — skipping analysis")
+        return None
+
+    # Strip data URI prefix if present
+    if "," in b64_data:
+        b64_data = b64_data.split(",", 1)[1]
+
+    user_message = (
+        f"Analyse this reference photograph. The user's request is: \"{user_request or 'place a product in this scene'}\".\n"
+        f"Based on the image and the user's request, identify what to keep and what to change.\n"
+        f"Return the JSON object as specified."
+    )
+
+    payload = {
+        "model": SCENE_ANALYSIS_MODEL,
+        "messages": [
+            {"role": "system", "content": SCENE_ANALYSIS_SYSTEM},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime_type};base64,{b64_data}"}
+                    },
+                    {"type": "text", "text": user_message},
+                ],
+            },
+        ],
+        "max_tokens": 600,
+        "temperature": 0.3,
+    }
+
+    try:
+        resp = _requests.post(
+            OPENROUTER_BASE,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://cwspoeticartistry.github.io/cws-whatsapp-simulator/",
+                "X-Title": "CWS Dr Gee Scene Analyser",
+            },
+            json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        raw = resp.json()["choices"][0]["message"]["content"].strip()
+        # Strip markdown code fences if model wraps the JSON
+        if raw.startswith("```"):
+            raw = re.sub(r"^```[a-z]*\n?", "", raw)
+            raw = re.sub(r"\n?```$", "", raw.strip())
+        result = json.loads(raw)
+        print(f"  [Scene Analyser] Analysis complete — keep: {result.get('keep','?')[:60]}")
+        return result
+    except json.JSONDecodeError as e:
+        print(f"  [Scene Analyser] JSON parse error: {e} | raw: {raw[:200]}")
+    except Exception as e:
+        print(f"  [Scene Analyser] Error: {e}")
+    return None
+
 
 # ---------------------------------------------------------------------------
 # Product image mapping
@@ -213,8 +313,10 @@ DEFAULT_STYLE = (
 )
 
 DEFAULT_COMPOSITION = (
-    "3:4 portrait aspect ratio composition. Product centered in the lower two-thirds "
-    "occupying approximately 60% of image height. Generous negative space in the upper "
+    "3:4 portrait aspect ratio composition. Product positioned in the lower two-thirds "
+    "occupying approximately 60% of image height — vary between centered and a slight "
+    "rule-of-thirds offset (shifted left or right of center by 10-15%) for a natural "
+    "lifestyle feel rather than always dead-center. Generous negative space in the upper "
     "third reserved for post-production text overlay. Straight-on front-facing shot "
     "with subtle 5-degree tilt. Product on a barely-visible reflective surface with "
     "soft mirror effect."
@@ -228,31 +330,125 @@ TECHNICAL_SPECS = (
 )
 
 
-def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img_file=None):
+def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img_file=None, scene_brief=None):
+    """
+    scene_brief: parsed dict from analyze_scene_image() — structured scene analysis.
+                 When present, produces a far more precise Layer 1 than plain scene_desc text.
+    scene_desc:  fallback plain-text description when no brief is available.
+    """
     name = product["name"]
     price = product.get("price", 0)
     description = product.get("description", "")
 
-    # Layer 1 — Style (use scene description if provided)
-    if scene_desc:
-        layer1 = f"Scene style based on the uploaded reference image: {scene_desc}. Maintain premium product photography quality with professional lighting."
+    has_scene = bool(scene_brief or scene_desc)
+
+    # Layer 1 — Style
+    if scene_brief:
+        # Rich structured analysis from the scene analyser agent
+        keep  = scene_brief.get("keep", "")
+        change = scene_brief.get("change", "")
+        scene_prompt = scene_brief.get("scene_prompt", "")
+        subjects = scene_brief.get("subjects", "")
+        lighting = scene_brief.get("lighting", "")
+        surfaces = scene_brief.get("surfaces", "")
+        atmosphere = scene_brief.get("atmosphere", "")
+
+        keep_clause = f" PRESERVE EXACTLY: {keep}." if keep else ""
+        change_clause = f" CHANGE ONLY: {change}." if change else ""
+        subjects_clause = (
+            f" SUBJECTS: {subjects} — reproduce their exact position, gesture and appearance;"
+            f" do not remove or alter them unless listed in CHANGE ONLY."
+        ) if subjects and subjects.lower() not in ("none", "no people", "") else ""
+
+        layer1 = (
+            "IMAGE 1 (FIRST ATTACHED IMAGE) IS THE SCENE/STYLE REFERENCE — a real photograph.\n\n"
+            f"SCENE ENVIRONMENT: {scene_prompt}\n\n"
+            f"LIGHTING: {lighting}. SURFACES: {surfaces}. ATMOSPHERE: {atmosphere}.\n\n"
+            f"{keep_clause}{subjects_clause}{change_clause}\n\n"
+            "Replicate every environmental detail of this reference photograph with photographic accuracy. "
+            "Do NOT invent a new background — rebuild this exact scene."
+        )
+    elif scene_desc:
+        # Fallback: plain text description (no vision analysis available)
+        layer1 = (
+            "IMAGE 1 (FIRST ATTACHED IMAGE) IS THE SCENE/STYLE REFERENCE. "
+            "This is a real photograph provided as the visual environment for this image. "
+            "You must replicate its background, surfaces, lighting direction, colour temperature, "
+            "atmosphere, props, textures, and mood EXACTLY. "
+            "Do NOT copy any products, people, text, or branding from this reference photo — "
+            "only use its environment and lighting as the scene. "
+            "The Dr Gee product(s) must be placed INTO this scene as if physically present, "
+            "picking up the scene's lighting, reflections, and shadows naturally."
+        )
     else:
         layer1 = DEFAULT_STYLE
 
+    # Build product image preamble — changes wording depending on whether a scene image is also attached
+    if has_scene and img_file:
+        _product_ref_label = (
+            "IMAGE 2 ONWARDS (REMAINING ATTACHED IMAGES) ARE THE PRODUCT REFERENCES. "
+            "These show the exact Dr Gee product(s) that must appear in this image. "
+        )
+    elif img_file:
+        _product_ref_label = (
+            "The attached image(s) are the exact visual reference for the product(s) "
+            "that must appear in this image. "
+        )
+    else:
+        _product_ref_label = ""
+
     _image_preamble = (
-        "The attached product image(s) are the exact visual reference for the "
-        "product(s) that must appear in this image. These attached photos are the "
-        "absolute ground truth for the shape, packaging design, label design, label "
-        "text, branding, colors, cap style, and all physical details of the products. "
-        "Reproduce every packaging detail IDENTICALLY — do not alter, redesign, "
-        "reimagine, stylize, or change anything about the product itself.\n\n"
+        _product_ref_label
+        + "These attached product photos are the absolute ground truth for the shape, "
+        "packaging design, label design, label text, branding, colors, cap style, and "
+        "all physical details of the products. Reproduce every packaging detail "
+        "IDENTICALLY — do not alter, redesign, reimagine, stylize, or change anything "
+        "about the product itself.\n\n"
+        "ORIGINAL BACKGROUND REMOVAL — CRITICAL: The product image was photographed "
+        "against a plain studio backdrop (white, grey, or neutral). That studio "
+        "background must be COMPLETELY REMOVED and replaced with the new scene "
+        "environment described above. Do not retain any of the product's original "
+        "backdrop — only keep the physical product itself, cut out cleanly, and "
+        "composite it into the new scene.\n\n"
         "SEAMLESS SCENE INTEGRATION: The product photos were taken against a studio "
-        "background and may have rim lighting, colored highlights, or background "
-        "artifacts that do not match the new scene. Remove any background artifacts "
-        "from the product photos and relight the products naturally to match the "
-        "scene's lighting environment described above. The product surfaces, cap, "
-        "and bottle should pick up soft shadows, ambient reflections, and the "
-        "scene's light direction as if they were physically present in the scene.\n\n"
+        "background and will have studio-specific lighting artifacts — rim lights, "
+        "white specular highlights, colored background reflections — that must be "
+        "completely removed and replaced with scene-appropriate lighting. This is a "
+        "full environment relighting, not just a background swap.\n\n"
+        "SPECULAR HIGHLIGHTS AND REFLECTIONS — CRITICAL: Any bright white or "
+        "studio-colored specular highlight currently visible on the product must be "
+        "eliminated. Replace all specular highlights with colors from the actual scene "
+        "environment. The product's surfaces should act as mirrors reflecting the "
+        "dominant colors of the surrounding scene — its specular, shadows, and ambient "
+        "light must all match the scene's lighting setup as if the product was "
+        "physically photographed there.\n\n"
+        "SHADOW AND AMBIENT OCCLUSION: Cast soft natural shadows in the direction of "
+        "the scene's light source. Add contact shadow where the product meets any "
+        "surface. The scene's ambient light should wrap softly around the product.\n\n"
+        "AMBER GLASS BOTTLE TRANSLUCENCY — CRITICAL: Amber/dark glass bottles "
+        "(dropper bottles, tincture bottles, spray bottles with amber glass bodies) "
+        "are SEMI-TRANSPARENT — NOT solid opaque plastic. Light passes through amber "
+        "glass with a warm honey-brown tint. Scene elements behind the bottle must be "
+        "partially visible through the glass body, filtered through the amber color. "
+        "Bright areas behind the bottle glow warmly as rich honey-amber through the "
+        "glass. Darker areas show as deep amber-brown. The glass body must have "
+        "visible depth and translucency — never render it as a solid painted surface. "
+        "Applies to: Eye and Ear Drops, tincture bottles, QS7 Syrup, QS8 sprays. "
+        "Does NOT apply to dark opaque PLASTIC Q Lyfe bottles (Herbal Boost Blend, "
+        "Libido Tonic, Corrective for Women) — those are solid with no light "
+        "transmission.\n\n"
+        "SILVER/METALLIC MYLAR POUCH PACKAGING — SPECIAL REFLECTION RULES: If the "
+        "product is a stand-up ziplock pouch, its body is FULLY SILVER/CHROME METALLIC "
+        "mylar — header, gussets, and back panel are all solid silver/chrome. Any blue "
+        "or dark tinting at the pouch edges in the reference image is a background-"
+        "removal editing artifact — ignore it. The actual pouch is entirely silver/"
+        "metallic. Silver metallic mylar behaves like a chrome mirror: it reflects the "
+        "scene's dominant colors crisply and strongly. A blue abstract scene = bold "
+        "blue streaks on the silver sides. A sky scene = sky blue and cloud white "
+        "mirrored on the chrome. A warm rustic scene = amber/golden mirror reflections. "
+        "Reflections on silver are more vivid and sharp than on dark glass — show clear "
+        "scene-color gradients on the metallic surfaces. The transparent front window "
+        "shows the scene environment through it with a soft interior product glow.\n\n"
     )
 
     # Layer 2 — Product
@@ -264,8 +460,12 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img
             + f"REINFORCEMENT DESCRIPTION: {visual_desc}\n\n"
             "IMPORTANT: The attached product images are the definitive reference for "
             "all packaging details. The only things that should adapt to the new scene "
-            "are: lighting on the product exterior, shadows cast by the product, and "
-            "surface reflections beneath it."
+            "are: lighting on the product exterior, specular highlight colors (must "
+            "match the scene environment — no studio-white highlights), environment-"
+            "matched reflections on the product's surfaces, and shadows. Everything "
+            "printed on or part of the physical product stays exactly as shown. Studio "
+            "lighting artifacts from the original product photo must be fully removed "
+            "and replaced — they must not appear in the final image."
         )
     elif img_file:
         # Image exists but not yet analyzed — attach it and use catalogue description
@@ -274,8 +474,12 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img
             + f"REINFORCEMENT DESCRIPTION: {name} by Dr Gee — {description}\n\n"
             "IMPORTANT: The attached product images are the definitive reference for "
             "all packaging details. The only things that should adapt to the new scene "
-            "are: lighting on the product exterior, shadows cast by the product, and "
-            "surface reflections beneath it."
+            "are: lighting on the product exterior, specular highlight colors (must "
+            "match the scene environment — no studio-white highlights), environment-"
+            "matched reflections on the product's surfaces, and shadows. Everything "
+            "printed on or part of the physical product stays exactly as shown. Studio "
+            "lighting artifacts from the original product photo must be fully removed "
+            "and replaced — they must not appear in the final image."
         )
     else:
         # No image at all — text only
@@ -304,7 +508,7 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img
     return "\n\n".join(layers)
 
 
-def assemble_video_prompt(product, cache_entry=None, scene_desc="premium wellness setting", img_file=None):
+def assemble_video_prompt(product, cache_entry=None, scene_desc="premium wellness setting", img_file=None, scene_brief=None):
     name = product["name"]
 
     # Build per-product locked elements from cache if available
@@ -353,7 +557,7 @@ def assemble_video_prompt(product, cache_entry=None, scene_desc="premium wellnes
         f"as a lower-third, not as a title card, not at the bottom of frame. Zero "
         f"invented text. The ONLY readable text permitted is what is physically printed "
         f"on the product labels.\n\n"
-        f"SCENE: {name} product on a premium surface in a {scene_desc}. Scene "
+        f"SCENE: {name} product on a premium surface in a {scene_brief.get('scene_prompt', scene_desc) if scene_brief else scene_desc}. Scene "
         f"composition and all props remain unchanged throughout.\n\n"
         f"The FIRST FRAME must be an exact photographic match of the attached source "
         f"image. Every subsequent frame maintains the same product appearance and same "
@@ -625,8 +829,25 @@ def _process_request(jid: str, data: dict):
                 extras = extra
                 break
 
-        scene_text = scene_description
-        if not scene_text and msg_text and len(msg_text) > len(name) + 10:
+        # Extract scene image base64 (sent from simulator when user uploads a reference photo)
+        scene_b64   = data.get("message", {}).get("image", {}).get("base64")
+        scene_mime  = data.get("message", {}).get("image", {}).get("mime_type", "image/jpeg")
+        scene_filename = data.get("message", {}).get("image", {}).get("filename", "scene-reference")
+
+        # Run scene analyser when a reference image is present
+        scene_brief = None
+        scene_text  = scene_description  # plain-text fallback
+        if scene_b64:
+            progress("Analysing reference image...")
+            scene_brief = analyze_scene_image(scene_b64, scene_mime, msg_text or "place the product in this scene")
+            if scene_brief:
+                progress(f"Scene analysis ready — keep: {scene_brief.get('keep','')[:40]}...")
+                scene_text = scene_brief.get("scene_prompt", "reference scene")
+            else:
+                progress("Scene analysis unavailable — using image as direct reference")
+                scene_text = scene_description or "user-uploaded reference scene"
+        elif not scene_text and msg_text and len(msg_text) > len(name) + 10:
+            # No image — use user's typed request as scene context
             scene_text = msg_text
 
         img_file = find_image_for_product(name)
@@ -634,16 +855,17 @@ def _process_request(jid: str, data: dict):
 
         # Assemble prompts
         progress("Building 7-layer image prompt...")
-        image_prompt = assemble_prompt(product, cache_entry, extras, scene_text, img_file=img_file)
+        image_prompt = assemble_prompt(product, cache_entry, extras, scene_text, img_file=img_file, scene_brief=scene_brief)
         progress("Building video prompt (v3 locked-elements)...")
-        video_prompt = assemble_video_prompt(product, cache_entry, scene_text or "premium wellness setting", img_file=img_file)
+        video_prompt = assemble_video_prompt(product, cache_entry, scene_text or "premium wellness setting", img_file=img_file, scene_brief=scene_brief)
 
-        print(f"[Job {jid}] Product: {name} (R{price}) | Cache: {'hit' if cache_entry else 'miss'} | Ref: {img_file or 'none'}")
+        print(f"[Job {jid}] Product: {name} (R{price}) | Cache: {'hit' if cache_entry else 'miss'} | Ref: {img_file or 'none'} | Scene: {'yes' if scene_b64 else 'no'}")
 
         # Generate image
         image_url = None
         local_path = None
         notion_url = None
+        scene_imgbb_url = None
 
         try:
             from generate_social_image import generate_social_image
@@ -653,10 +875,13 @@ def _process_request(jid: str, data: dict):
                 product_slug=slug,
                 output_dir=str(GENERATED_DIR),
                 product_image_files=ref_files,
+                scene_image_base64=scene_b64,
+                scene_image_filename=scene_filename,
                 on_progress=progress,
             )
             local_path = result.get("local_path")
             image_url = result.get("image_url")
+            scene_imgbb_url = result.get("scene_imgbb")
             if image_url:
                 progress("Image saved locally")
         except Exception as e:
@@ -666,6 +891,8 @@ def _process_request(jid: str, data: dict):
         # Notion logging
         progress("Logging to Notion...")
         ref_images = [img_file] if img_file else []
+        if scene_imgbb_url:
+            ref_images = [f"scene:{scene_imgbb_url}"] + ref_images
         try:
             from post_to_notion import post_to_notion
             notion_url = post_to_notion(
@@ -708,6 +935,212 @@ def _process_request(jid: str, data: dict):
     except Exception as e:
         traceback.print_exc()
         _emit(jid, "error", f"Unexpected error: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+# Business Updater API
+# ---------------------------------------------------------------------------
+
+def _load_business_state(business_id: str) -> dict | None:
+    path = BUSINESS_STATE_DIR / f"{business_id}.state.json"
+    if not path.exists():
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+def _save_business_state(business_id: str, state: dict):
+    path = BUSINESS_STATE_DIR / f"{business_id}.state.json"
+    state["last_updated"] = datetime.now().isoformat() + "Z"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
+
+def _log_operation(entry: dict):
+    OPERATIONS_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(OPERATIONS_LOG, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+
+
+@app.route("/api/business", methods=["GET"])
+def api_get_business():
+    business_id = request.args.get("id", "dr-gee")
+    state = _load_business_state(business_id)
+    if not state:
+        return jsonify({"error": f"Business '{business_id}' not found"}), 404
+    return jsonify(state)
+
+
+@app.route("/api/business/update", methods=["POST"])
+def api_update_business():
+    data = request.get_json(silent=True) or {}
+    business_id = data.get("business_id", "dr-gee")
+    updates = data.get("updates", {})
+    category = data.get("category", "general")
+
+    if not updates:
+        return jsonify({"error": "No updates provided"}), 400
+
+    state = _load_business_state(business_id)
+    if not state:
+        return jsonify({"error": f"Business '{business_id}' not found"}), 404
+
+    changes = {}
+
+    def _apply(target: dict, patch: dict, path=""):
+        for key, new_val in patch.items():
+            old_val = target.get(key)
+            if isinstance(new_val, dict) and isinstance(old_val, dict):
+                _apply(target[key], new_val, path + key + ".")
+            else:
+                if old_val != new_val:
+                    changes[path + key] = {"before": old_val, "after": new_val}
+                target[key] = new_val
+
+    # Handle special array operations for promotions
+    if "add_promotion" in updates:
+        promo = updates.pop("add_promotion")
+        if "id" not in promo:
+            promo["id"] = f"promo-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        state.setdefault("active_promotions", []).append(promo)
+        changes["active_promotions"] = {"action": "added", "promo": promo}
+
+    if "expire_promotion" in updates:
+        promo_id = updates.pop("expire_promotion")
+        active = state.get("active_promotions", [])
+        expired = [p for p in active if p.get("id") == promo_id]
+        state["active_promotions"] = [p for p in active if p.get("id") != promo_id]
+        state.setdefault("past_promotions", []).extend(expired)
+        changes["active_promotions"] = {"action": "expired", "promo_id": promo_id}
+
+    # Apply all remaining field updates
+    _apply(state, updates)
+
+    _save_business_state(business_id, state)
+
+    _log_operation({
+        "timestamp": datetime.now().isoformat() + "Z",
+        "business_id": business_id,
+        "operation": "business_update",
+        "category": category,
+        "changes": changes,
+        "source": "form",
+        "confirmed_by": "owner",
+    })
+
+    return jsonify({"success": True, "changes": changes, "state": state})
+
+
+@app.route("/api/business/analyze-upload", methods=["POST"])
+def api_analyze_brand_upload():
+    """Analyze an uploaded brand document/image and extract structured data."""
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        return jsonify({"error": "OPENROUTER_API_KEY not configured"}), 503
+
+    data = request.get_json(silent=True) or {}
+    b64_data = data.get("file_data", "")
+    mime_type = data.get("mime_type", "image/png")
+    file_name = data.get("file_name", "upload")
+
+    if not b64_data:
+        return jsonify({"error": "No file data provided"}), 400
+
+    if "," in b64_data:
+        b64_data = b64_data.split(",", 1)[1]
+
+    BRAND_ANALYSIS_SYSTEM = """You are a CWS business analyst. Your job is to extract structured business profile data from uploaded documents, images, brand guides, packaging photos, or any brand material.
+
+Extract everything you can find and return ONLY a JSON object with these fields (omit fields you cannot find):
+{
+  "display_name": "business display name",
+  "brand_label_text": "uppercase label text if different",
+  "tone_of_voice": "how the brand communicates",
+  "target_market": "who the products are for",
+  "brand_story": "origin or mission statement",
+  "colors": {
+    "primary": "#hex or null",
+    "secondary": "#hex or null",
+    "accent": "#hex or null"
+  },
+  "products": [
+    {"name": "product name", "price": 350, "description": "short description"}
+  ],
+  "contacts": {
+    "phone": "number or null",
+    "email": "email or null",
+    "website": "url or null",
+    "instagram": "handle or null",
+    "facebook": "page or null"
+  },
+  "delivery_methods": ["list of delivery options found"],
+  "payment_methods": ["list of payment options found"],
+  "other_notes": "any other relevant business info not captured above"
+}
+
+If the document is a product image, extract the product name, packaging description, and any visible text from the label."""
+
+    payload = {
+        "model": SCENE_ANALYSIS_MODEL,
+        "messages": [
+            {"role": "system", "content": BRAND_ANALYSIS_SYSTEM},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime_type};base64,{b64_data}"}
+                    },
+                    {"type": "text", "text": f"Analyse this brand document/image ({file_name}) and extract all business profile data you can find."},
+                ],
+            },
+        ],
+        "max_tokens": 1200,
+        "temperature": 0.2,
+    }
+
+    try:
+        resp = _requests.post(
+            OPENROUTER_BASE,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://cwspoeticartistry.github.io/cws-whatsapp-simulator/",
+                "X-Title": "CWS Brand Analyser",
+            },
+            json=payload,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        raw = resp.json()["choices"][0]["message"]["content"].strip()
+        if raw.startswith("```"):
+            raw = re.sub(r"^```[a-z]*\n?", "", raw)
+            raw = re.sub(r"\n?```$", "", raw.strip())
+        result = json.loads(raw)
+        print(f"  [Brand Analyser] Extracted {len(result)} top-level fields from {file_name}")
+        return jsonify({"success": True, "extracted": result})
+    except json.JSONDecodeError as e:
+        return jsonify({"error": f"Could not parse AI response: {e}", "raw": raw[:300]}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/business/recent-operations", methods=["GET"])
+def api_recent_operations():
+    business_id = request.args.get("id", "dr-gee")
+    limit = int(request.args.get("limit", 20))
+    if not OPERATIONS_LOG.exists():
+        return jsonify([])
+    entries = []
+    with open(OPERATIONS_LOG, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    entry = json.loads(line)
+                    if entry.get("business_id") == business_id:
+                        entries.append(entry)
+                except Exception:
+                    pass
+    return jsonify(entries[-limit:])
 
 
 @app.route("/health", methods=["GET"])

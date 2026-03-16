@@ -859,6 +859,246 @@
     object-fit: contain;
     border-radius: 4px;
   }
+
+  /* ===== BUSINESS UPDATER ===== */
+  .bu-page {
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .bu-page.active { display: flex; }
+
+  .bu-header {
+    background: #1f2c34;
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 10px;
+    min-height: 52px; flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .bu-header-title { flex: 1; font-weight: 600; font-size: 15px; }
+  .bu-header-sub { font-size: 11px; color: var(--text-muted); }
+  .bu-upload-btn {
+    background: linear-gradient(135deg, #ea580c, #f59e0b);
+    border: none; color: white;
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    white-space: nowrap;
+  }
+  .bu-upload-btn:active { opacity: 0.8; }
+
+  .bu-tabs {
+    display: flex; background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .bu-tabs::-webkit-scrollbar { display: none; }
+  .bu-tab {
+    padding: 10px 16px; font-size: 13px; font-weight: 500;
+    color: var(--text-muted); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap; transition: all 0.2s;
+  }
+  .bu-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .bu-tab:hover:not(.active) { color: var(--text); }
+
+  .bu-content { flex: 1; overflow-y: auto; padding: 16px; }
+
+  .bu-section { margin-bottom: 24px; }
+  .bu-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--gold-dim);
+    margin-bottom: 12px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bu-field { margin-bottom: 14px; }
+  .bu-label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; font-weight: 500; }
+  .bu-input, .bu-textarea, .bu-select {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 9px 12px;
+    font-size: 13px; font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .bu-input:focus, .bu-textarea:focus, .bu-select:focus { outline: none; border-color: var(--gold-dim); }
+  .bu-textarea { resize: vertical; min-height: 70px; }
+  .bu-select option { background: var(--surface2); }
+
+  .bu-color-row { display: flex; gap: 8px; align-items: center; }
+  .bu-color-swatch {
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 2px solid var(--border); cursor: pointer; flex-shrink: 0;
+    padding: 0;
+  }
+  .bu-color-input { flex: 1; }
+
+  .bu-checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bu-checkbox-item {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 12px;
+  }
+  .bu-checkbox-item input[type=checkbox] { accent-color: var(--gold); }
+
+  .bu-save-btn {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, #ea580c, #f59e0b);
+    border: none; border-radius: 10px;
+    color: white; font-size: 14px; font-weight: 700;
+    cursor: pointer; margin-top: 8px; transition: opacity 0.2s;
+  }
+  .bu-save-btn:hover { opacity: 0.9; }
+  .bu-save-btn:active { opacity: 0.7; }
+  .bu-save-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .bu-product-item {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px; margin-bottom: 10px;
+  }
+  .bu-product-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .bu-product-name { font-size: 13px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bu-price-input {
+    width: 72px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 5px 8px; font-size: 13px; text-align: center;
+  }
+  .bu-price-prefix { font-size: 13px; color: var(--gold); font-weight: 700; }
+  .bu-product-slug { font-size: 10px; color: var(--text-muted); font-family: monospace; }
+  .bu-product-pkg { font-size: 10px; background: var(--border); border-radius: 4px; padding: 2px 6px; color: var(--text-muted); }
+  .bu-product-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+  .bu-add-product-form {
+    background: var(--surface); border: 1px dashed var(--border);
+    border-radius: 10px; padding: 14px; margin-top: 12px;
+  }
+
+  .bu-promo-item {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px; margin-bottom: 10px;
+  }
+  .bu-promo-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .bu-promo-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .bu-promo-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; text-transform: uppercase; }
+  .bu-promo-badge.active { background: rgba(37,211,102,0.2); color: var(--accent); }
+  .bu-promo-badge.expired { background: rgba(239,68,68,0.2); color: var(--danger); }
+  .bu-promo-detail { font-size: 11px; color: var(--text-muted); line-height: 1.9; }
+  .bu-promo-expire-btn {
+    font-size: 11px; color: var(--danger); background: none;
+    border: 1px solid var(--danger); border-radius: 6px;
+    padding: 3px 8px; cursor: pointer; margin-top: 6px;
+  }
+
+  .bu-preview-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; margin-bottom: 14px;
+  }
+  .bu-preview-card-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 10px;
+  }
+  .bu-preview-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 12px; gap: 8px;
+  }
+  .bu-preview-row:last-child { border-bottom: none; }
+  .bu-preview-key { color: var(--text-muted); flex-shrink: 0; min-width: 110px; }
+  .bu-preview-val { color: var(--text); text-align: right; word-break: break-word; }
+  .bu-color-dot {
+    display: inline-block; width: 12px; height: 12px;
+    border-radius: 3px; margin-right: 4px; vertical-align: middle;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .bu-brand-badge {
+    display: inline-block; background: var(--gold); color: #1a1a1a;
+    font-weight: 800; font-size: 20px; padding: 8px 20px;
+    border-radius: 8px; margin-bottom: 12px; letter-spacing: 1px;
+  }
+
+  .bu-op-log-item {
+    background: var(--surface2); border-left: 3px solid var(--gold-dim);
+    border-radius: 0 8px 8px 0; padding: 8px 10px;
+    margin-bottom: 8px; font-size: 11px;
+  }
+  .bu-op-log-time { color: var(--text-muted); margin-bottom: 2px; }
+  .bu-op-log-desc { color: var(--text); }
+
+  .bu-empty-state { text-align: center; color: var(--text-muted); padding: 30px 16px; font-size: 13px; }
+  .bu-empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  .bu-toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 8px 18px;
+    font-size: 13px; color: var(--text);
+    opacity: 0; pointer-events: none;
+    transition: all 0.3s; z-index: 9999; white-space: nowrap;
+  }
+  .bu-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .bu-toast.success { border-color: var(--accent); color: var(--accent); }
+  .bu-toast.error { border-color: var(--danger); color: var(--danger); }
+
+  .bu-upload-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 1000; display: none; align-items: flex-end;
+  }
+  .bu-upload-overlay.open { display: flex; }
+  .bu-upload-sheet {
+    background: var(--surface); border-radius: 20px 20px 0 0;
+    padding: 20px 16px 36px; width: 100%;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .bu-upload-sheet-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .bu-upload-sheet-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+  .bu-upload-drop {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 30px; text-align: center; cursor: pointer;
+    transition: border-color 0.2s; margin-bottom: 14px;
+  }
+  .bu-upload-drop:hover, .bu-upload-drop.dragging { border-color: var(--gold-dim); }
+  .bu-upload-drop-icon { font-size: 36px; margin-bottom: 8px; }
+  .bu-upload-drop-text { font-size: 13px; color: var(--text-muted); }
+  .bu-upload-drop-text strong { color: var(--text); }
+
+  .bu-extracted-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--accent); }
+  .bu-extracted-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px; margin-bottom: 8px;
+  }
+  .bu-extracted-item input[type=checkbox] { accent-color: var(--gold); margin-top: 3px; flex-shrink: 0; }
+  .bu-extracted-key { font-size: 11px; color: var(--text-muted); }
+  .bu-extracted-val { font-size: 13px; color: var(--text); }
+  .bu-apply-btn {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, #059669, #34d399);
+    border: none; border-radius: 10px;
+    color: white; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px;
+  }
+  .bu-close-sheet-btn {
+    width: 100%; padding: 10px; background: transparent;
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text-muted); font-size: 13px; cursor: pointer; margin-top: 8px;
+  }
+  .bu-spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+    border-radius: 50%; animation: buSpin 0.7s linear infinite; vertical-align: middle;
+  }
+  @keyframes buSpin { to { transform: rotate(360deg); } }
+  .bu-analyzing-bar {
+    text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;
+  }
+  .bu-refresh-btn {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-muted); font-size: 11px; padding: 4px 10px;
+    cursor: pointer; float: right; margin-top: -2px;
+  }
+  .bu-refresh-btn:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
 </style>
 </head>
 <body>
@@ -892,13 +1132,12 @@
     </div>
 
     <!-- Business Updater -->
-    <div class="sim-card coming-soon">
+    <div class="sim-card active" onclick="openSim('business-updater')">
       <div class="sim-card-icon" style="background: linear-gradient(135deg, #ea580c, #f59e0b);">
         <span>&#x2699;</span>
       </div>
       <div class="sim-card-title">Business Updater</div>
       <div class="sim-card-desc">Update brand, products, prices, and promotions</div>
-      <span class="badge-soon">Coming Soon</span>
     </div>
 
     <!-- CRM & Orders -->
@@ -1006,6 +1245,316 @@
 
 <!-- Hidden file inputs -->
 <input type="file" id="sceneInput" accept="image/*" onchange="handleSceneSelect(event)">
+<input type="file" id="buFileInput" accept="image/*,application/pdf,.txt,.md,.csv" onchange="buHandleFileSelect(event)" style="display:none">
+
+<!-- ===== BUSINESS UPDATER PAGE ===== -->
+<div class="bu-page" id="simBusinessUpdater">
+
+  <!-- Header -->
+  <div class="bu-header">
+    <button class="header-back" onclick="goHome()">&#x2190;</button>
+    <div>
+      <div class="bu-header-title">&#x2699; Business Updater</div>
+      <div class="bu-header-sub" id="buBusinessLabel">Dr Gee</div>
+    </div>
+    <button class="bu-upload-btn" onclick="openBrandUpload()">
+      &#x1F4E4; Upload Brand Info
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="bu-tabs">
+    <div class="bu-tab active" onclick="buSwitchTab('brand')" id="buTab-brand">Brand</div>
+    <div class="bu-tab" onclick="buSwitchTab('products')" id="buTab-products">Products</div>
+    <div class="bu-tab" onclick="buSwitchTab('promotions')" id="buTab-promotions">Promotions</div>
+    <div class="bu-tab" onclick="buSwitchTab('operations')" id="buTab-operations">Operations</div>
+    <div class="bu-tab" onclick="buSwitchTab('contacts')" id="buTab-contacts">Contacts</div>
+    <div class="bu-tab" onclick="buSwitchTab('preview')" id="buTab-preview">&#x1F441; Preview</div>
+  </div>
+
+  <!-- ── TAB: BRAND ── -->
+  <div class="bu-content" id="buPanel-brand">
+    <div class="bu-section">
+      <div class="bu-section-title">Brand Identity</div>
+      <div class="bu-field">
+        <label class="bu-label">Display Name (overlays &amp; conversations)</label>
+        <input class="bu-input" id="bu-displayName" type="text" placeholder="Dr Gee">
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Label Text (as printed on product labels)</label>
+        <input class="bu-input" id="bu-labelText" type="text" placeholder="DR GEE">
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Tone of Voice</label>
+        <textarea class="bu-textarea" id="bu-toneOfVoice" placeholder="Premium, authoritative, wellness-focused..."></textarea>
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Target Market</label>
+        <input class="bu-input" id="bu-targetMarket" type="text" placeholder="Health-conscious South African adults 25-55">
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Brand Story</label>
+        <textarea class="bu-textarea" id="bu-brandStory" placeholder="Formulated by Dr Gee since 1992..."></textarea>
+      </div>
+    </div>
+
+    <div class="bu-section">
+      <div class="bu-section-title">Brand Colors</div>
+      <div class="bu-field">
+        <label class="bu-label">Primary Color</label>
+        <div class="bu-color-row">
+          <input type="color" class="bu-color-swatch" id="bu-colorPrimaryPicker" oninput="document.getElementById('bu-colorPrimary').value=this.value">
+          <input class="bu-input bu-color-input" id="bu-colorPrimary" type="text" placeholder="#1a3a3a" oninput="document.getElementById('bu-colorPrimaryPicker').value=this.value">
+        </div>
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Secondary Color</label>
+        <div class="bu-color-row">
+          <input type="color" class="bu-color-swatch" id="bu-colorSecondaryPicker" oninput="document.getElementById('bu-colorSecondary').value=this.value">
+          <input class="bu-input bu-color-input" id="bu-colorSecondary" type="text" placeholder="#2d2d2d" oninput="document.getElementById('bu-colorSecondaryPicker').value=this.value">
+        </div>
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Accent / Gold Color</label>
+        <div class="bu-color-row">
+          <input type="color" class="bu-color-swatch" id="bu-colorAccentPicker" oninput="document.getElementById('bu-colorAccent').value=this.value">
+          <input class="bu-input bu-color-input" id="bu-colorAccent" type="text" placeholder="#c9a84c" oninput="document.getElementById('bu-colorAccentPicker').value=this.value">
+        </div>
+      </div>
+    </div>
+
+    <div class="bu-section">
+      <div class="bu-section-title">Image Generation Style</div>
+      <div class="bu-field">
+        <label class="bu-label">Default Style Recipe</label>
+        <textarea class="bu-textarea" id="bu-defaultStyle" style="min-height:90px" placeholder="Describe the default visual aesthetic for generated product images..."></textarea>
+      </div>
+    </div>
+
+    <button class="bu-save-btn" onclick="buSaveBrand()">Save Brand Identity</button>
+  </div>
+
+  <!-- ── TAB: PRODUCTS ── -->
+  <div class="bu-content" id="buPanel-products" style="display:none">
+    <div class="bu-section">
+      <div class="bu-section-title">Product Prices
+        <button class="bu-refresh-btn" onclick="buLoadProducts()">&#x21BB; Refresh</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Edit prices inline. Changes apply to the catalogue and image generation.</p>
+      <div id="buProductList">
+        <div class="bu-empty-state"><div class="bu-empty-icon">&#x23F3;</div>Loading products...</div>
+      </div>
+    </div>
+
+    <div class="bu-section">
+      <div class="bu-section-title">Add New Product</div>
+      <div class="bu-add-product-form">
+        <div class="bu-field">
+          <label class="bu-label">Product Name (exact)</label>
+          <input class="bu-input" id="bu-newProductName" type="text" placeholder="Herbal Vitality Blend">
+        </div>
+        <div class="bu-field">
+          <label class="bu-label">Price (ZAR, no R prefix)</label>
+          <input class="bu-input" id="bu-newProductPrice" type="number" placeholder="350" min="0">
+        </div>
+        <div class="bu-field">
+          <label class="bu-label">Short Description</label>
+          <textarea class="bu-textarea" id="bu-newProductDesc" style="min-height:55px" placeholder="What does this product do?"></textarea>
+        </div>
+        <div class="bu-field">
+          <label class="bu-label">Package Type</label>
+          <select class="bu-select" id="bu-newProductPkg">
+            <option value="white_capsule_bottle">White Capsule Bottle</option>
+            <option value="dark_standup_pouch">Silver/Dark Stand-up Pouch</option>
+            <option value="amber_tincture_bottle">Amber Glass Tincture Bottle</option>
+            <option value="dark_spray_bottle">Dark Glass Spray Bottle</option>
+            <option value="dark_syrup_bottle_qlife">Dark Plastic Syrup Bottle (Q Lyfe)</option>
+            <option value="other_jar">Other Jar</option>
+            <option value="combo">Combo Set</option>
+          </select>
+        </div>
+        <button class="bu-save-btn" onclick="buAddProduct()">Add Product</button>
+      </div>
+    </div>
+
+    <button class="bu-save-btn" onclick="buSavePrices()">Save Price Changes</button>
+  </div>
+
+  <!-- ── TAB: PROMOTIONS ── -->
+  <div class="bu-content" id="buPanel-promotions" style="display:none">
+    <div class="bu-section">
+      <div class="bu-section-title">Active Promotions</div>
+      <div id="buPromoList">
+        <div class="bu-empty-state"><div class="bu-empty-icon">&#x1F3F7;</div>No active promotions</div>
+      </div>
+    </div>
+
+    <div class="bu-section">
+      <div class="bu-section-title">Create New Promotion</div>
+      <div class="bu-add-product-form">
+        <div class="bu-field">
+          <label class="bu-label">Promotion Name</label>
+          <input class="bu-input" id="bu-promoName" type="text" placeholder="Winter Sale">
+        </div>
+        <div class="bu-field">
+          <label class="bu-label">Type</label>
+          <select class="bu-select" id="bu-promoType">
+            <option value="percentage_discount">Percentage Discount</option>
+            <option value="fixed_discount">Fixed Amount Off</option>
+            <option value="buy_x_get_y">Buy X Get Y</option>
+            <option value="free_delivery">Free Delivery</option>
+            <option value="combo_deal">Combo Deal</option>
+          </select>
+        </div>
+        <div class="bu-field">
+          <label class="bu-label">Value (% or R amount)</label>
+          <input class="bu-input" id="bu-promoValue" type="number" placeholder="15" min="0">
+        </div>
+        <div class="bu-field">
+          <label class="bu-label">Applies To</label>
+          <select class="bu-select" id="bu-promoProducts">
+            <option value="all">All Products</option>
+            <option value="capsules">Capsules Only</option>
+            <option value="powders">Powders Only</option>
+            <option value="tinctures">Tinctures Only</option>
+          </select>
+        </div>
+        <div class="bu-field">
+          <label class="bu-label">Start Date</label>
+          <input class="bu-input" id="bu-promoStart" type="date">
+        </div>
+        <div class="bu-field">
+          <label class="bu-label">End Date</label>
+          <input class="bu-input" id="bu-promoEnd" type="date">
+        </div>
+        <button class="bu-save-btn" onclick="buCreatePromo()">Create Promotion</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: OPERATIONS ── -->
+  <div class="bu-content" id="buPanel-operations" style="display:none">
+    <div class="bu-section">
+      <div class="bu-section-title">Delivery Methods</div>
+      <div class="bu-checkbox-grid" id="buDeliveryMethods">
+        <label class="bu-checkbox-item"><input type="checkbox" id="del-courier" value="courier"> Courier (nationwide)</label>
+        <label class="bu-checkbox-item"><input type="checkbox" id="del-local" value="local_delivery"> Local Delivery</label>
+        <label class="bu-checkbox-item"><input type="checkbox" id="del-collection" value="self_collection"> Self-Collection</label>
+        <label class="bu-checkbox-item"><input type="checkbox" id="del-paxi" value="paxi"> PAXI / PEP</label>
+      </div>
+    </div>
+
+    <div class="bu-section">
+      <div class="bu-section-title">Payment Methods</div>
+      <div class="bu-checkbox-grid">
+        <label class="bu-checkbox-item"><input type="checkbox" id="pay-eft" value="EFT"> EFT / Bank Transfer</label>
+        <label class="bu-checkbox-item"><input type="checkbox" id="pay-cash" value="cash"> Cash</label>
+        <label class="bu-checkbox-item"><input type="checkbox" id="pay-snapscan" value="SnapScan"> SnapScan</label>
+        <label class="bu-checkbox-item"><input type="checkbox" id="pay-zapper" value="Zapper"> Zapper</label>
+        <label class="bu-checkbox-item"><input type="checkbox" id="pay-card" value="card"> Card (POS)</label>
+        <label class="bu-checkbox-item"><input type="checkbox" id="pay-ozow" value="Ozow"> Ozow / PayFast</label>
+      </div>
+    </div>
+
+    <div class="bu-section">
+      <div class="bu-section-title">Business Hours</div>
+      <div class="bu-field">
+        <label class="bu-label">Weekdays</label>
+        <input class="bu-input" id="bu-hoursWeekday" type="text" placeholder="Mon–Fri 08:00–17:00">
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Weekends</label>
+        <input class="bu-input" id="bu-hoursWeekend" type="text" placeholder="Sat 09:00–13:00, Sun closed">
+      </div>
+    </div>
+
+    <button class="bu-save-btn" onclick="buSaveOperations()">Save Operations</button>
+  </div>
+
+  <!-- ── TAB: CONTACTS ── -->
+  <div class="bu-content" id="buPanel-contacts" style="display:none">
+    <div class="bu-section">
+      <div class="bu-section-title">Contact Details</div>
+      <div class="bu-field">
+        <label class="bu-label">WhatsApp / Phone</label>
+        <input class="bu-input" id="bu-phone" type="tel" placeholder="+27 83 123 4567">
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Email Address</label>
+        <input class="bu-input" id="bu-email" type="email" placeholder="info@drgeemtshali.co.za">
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Website</label>
+        <input class="bu-input" id="bu-website" type="url" placeholder="https://drgeemtshali.co.za">
+      </div>
+    </div>
+    <div class="bu-section">
+      <div class="bu-section-title">Social Media</div>
+      <div class="bu-field">
+        <label class="bu-label">Instagram</label>
+        <input class="bu-input" id="bu-instagram" type="text" placeholder="@drgeewellness">
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">Facebook</label>
+        <input class="bu-input" id="bu-facebook" type="text" placeholder="/DrGeeHerbalWellness">
+      </div>
+      <div class="bu-field">
+        <label class="bu-label">TikTok</label>
+        <input class="bu-input" id="bu-tiktok" type="text" placeholder="@drgeewellness">
+      </div>
+    </div>
+    <button class="bu-save-btn" onclick="buSaveContacts()">Save Contact Details</button>
+  </div>
+
+  <!-- ── TAB: PREVIEW ── -->
+  <div class="bu-content" id="buPanel-preview" style="display:none">
+    <div id="buPreviewContent">
+      <div class="bu-empty-state"><div class="bu-empty-icon">&#x23F3;</div>Loading profile...</div>
+    </div>
+    <div class="bu-section" style="margin-top:20px">
+      <div class="bu-section-title">Recent Updates</div>
+      <div id="buOpLog">
+        <div class="bu-empty-state"><div class="bu-empty-icon">&#x1F4CB;</div>No operations logged yet</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end bu-page -->
+
+<!-- ===== BRAND UPLOAD SHEET ===== -->
+<div class="bu-upload-overlay" id="buUploadOverlay" onclick="buCloseUploadOnBg(event)">
+  <div class="bu-upload-sheet" id="buUploadSheet">
+    <div class="bu-upload-sheet-title">&#x1F4E4; Upload Brand Info</div>
+    <div class="bu-upload-sheet-sub">Upload packaging photos, brand guides, PDFs or text files. AI will extract structured data and pre-fill your forms.</div>
+
+    <div class="bu-upload-drop" id="buUploadDrop" onclick="document.getElementById('buFileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('dragging')"
+         ondragleave="this.classList.remove('dragging')"
+         ondrop="buHandleDrop(event)">
+      <div class="bu-upload-drop-icon">&#x1F4F7;</div>
+      <div class="bu-upload-drop-text">
+        <strong>Tap to select file</strong><br>
+        or drag &amp; drop here<br>
+        <span style="font-size:11px">Images, PDF, TXT, CSV</span>
+      </div>
+    </div>
+
+    <div id="buAnalyzingBar" style="display:none" class="bu-analyzing-bar">
+      <span class="bu-spinner"></span>&nbsp; Analyzing with AI...
+    </div>
+
+    <div id="buExtractedSection" style="display:none">
+      <div class="bu-extracted-title">&#x2705; Extracted Data — select what to apply</div>
+      <div id="buExtractedList"></div>
+      <button class="bu-apply-btn" onclick="buApplyExtracted()">Apply Selected to Forms</button>
+    </div>
+
+    <button class="bu-close-sheet-btn" onclick="closeBrandUpload()">Cancel</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="bu-toast" id="buToast"></div>
 
 <!-- ===== CATALOGUE DRAWER ===== -->
 <div class="catalogue-overlay" id="catOverlay" onclick="closeCatalogue()"></div>
@@ -1071,11 +1620,15 @@ function openSim(id) {
     document.getElementById('simImageGen').classList.add('active');
     updateConnStatus();
     loadCatalogueData();
+  } else if (id === 'business-updater') {
+    document.getElementById('simBusinessUpdater').classList.add('active');
+    buInit();
   }
 }
 
 function goHome() {
   document.getElementById('simImageGen').classList.remove('active');
+  document.getElementById('simBusinessUpdater').classList.remove('active');
   document.getElementById('heroPage').style.display = '';
 }
 
@@ -1702,6 +2255,560 @@ function clearChat() {
   sessionId = generateId();
   localStorage.setItem('cws_session_id', sessionId);
   addSystemMsg('Chat cleared.');
+}
+
+// ============================================================
+// BUSINESS UPDATER
+// ============================================================
+let buState = null;
+let buCurrentTab = 'brand';
+let buExtractedData = null;
+let buPriceEdits = {}; // slug -> new price
+
+function buServerBase() {
+  return localStorage.getItem('cws_server_base') || '';
+}
+
+function buBusinessId() {
+  return localStorage.getItem('cws_business_id') || 'dr-gee';
+}
+
+function buToast(msg, type = '') {
+  const el = document.getElementById('buToast');
+  el.textContent = msg;
+  el.className = 'bu-toast' + (type ? ' ' + type : '');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+async function buInit() {
+  await buLoadState();
+  buSwitchTab('brand');
+}
+
+async function buLoadState() {
+  const base = buServerBase();
+  if (!base) { buToast('Server not configured — open Settings', 'error'); return; }
+  try {
+    const r = await fetch(`${base}/api/business?id=${buBusinessId()}`);
+    if (!r.ok) throw new Error(await r.text());
+    buState = await r.json();
+    document.getElementById('buBusinessLabel').textContent = buState.display_name || buState.business_name || buBusinessId();
+    buFillForms();
+  } catch (e) {
+    buToast('Could not load business profile: ' + e.message, 'error');
+  }
+}
+
+function buFillForms() {
+  if (!buState) return;
+  const id = buState.identity || {};
+  _buSet('bu-displayName', buState.display_name);
+  _buSet('bu-labelText', id.brand_label_text);
+  _buSet('bu-toneOfVoice', id.tone_of_voice);
+  _buSet('bu-targetMarket', id.target_market);
+  _buSet('bu-brandStory', id.brand_story);
+  _buSet('bu-colorPrimary', (id.colors || {}).primary || '');
+  _buSet('bu-colorSecondary', (id.colors || {}).secondary || '');
+  _buSet('bu-colorAccent', (id.colors || {}).accent_gold || '');
+  _buSet('bu-defaultStyle', (buState.image_gen || {}).default_style_recipe || '');
+  // Sync color swatches
+  ['Primary','Secondary','Accent'].forEach(k => {
+    const hex = document.getElementById('bu-color' + k).value;
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+      document.getElementById('bu-color' + k + 'Picker').value = hex;
+    }
+  });
+  // Contacts
+  const contacts = buState.contacts || {};
+  _buSet('bu-phone', contacts.phone || (buState.whatsapp || {}).phone_number_id !== 'pending_meta_setup' ? (buState.whatsapp || {}).phone_number_id : '');
+  _buSet('bu-email', contacts.email || '');
+  _buSet('bu-website', contacts.website || (buState.crm || {}).base_url || '');
+  _buSet('bu-instagram', contacts.instagram || '');
+  _buSet('bu-facebook', contacts.facebook || '');
+  _buSet('bu-tiktok', contacts.tiktok || '');
+  // Operations
+  const ops = buState.operations || {};
+  const delivery = ops.delivery_methods || [];
+  ['courier','local','collection','paxi'].forEach(id => {
+    const el = document.getElementById('del-' + id);
+    if (el) el.checked = delivery.includes(el.value);
+  });
+  const payments = ops.payment_methods || [];
+  ['eft','cash','snapscan','zapper','card','ozow'].forEach(id => {
+    const el = document.getElementById('pay-' + id);
+    if (el) el.checked = payments.includes(el.value);
+  });
+  _buSet('bu-hoursWeekday', (ops.hours || {}).weekday || '');
+  _buSet('bu-hoursWeekend', (ops.hours || {}).weekend || '');
+}
+
+function _buSet(id, val) {
+  const el = document.getElementById(id);
+  if (el && val !== undefined && val !== null) el.value = val;
+}
+
+function buSwitchTab(tab) {
+  buCurrentTab = tab;
+  document.querySelectorAll('.bu-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.bu-content').forEach(p => p.style.display = 'none');
+  const tabEl = document.getElementById('buTab-' + tab);
+  const panelEl = document.getElementById('buPanel-' + tab);
+  if (tabEl) tabEl.classList.add('active');
+  if (panelEl) panelEl.style.display = 'block';
+
+  if (tab === 'products') buLoadProducts();
+  if (tab === 'promotions') buLoadPromos();
+  if (tab === 'preview') buLoadPreview();
+}
+
+// ── Products tab ──
+async function buLoadProducts() {
+  const base = buServerBase();
+  if (!base) return;
+  const container = document.getElementById('buProductList');
+  container.innerHTML = '<div class="bu-empty-state"><div class="bu-empty-icon">&#x23F3;</div>Loading...</div>';
+  try {
+    const r = await fetch(`${base}/api/catalogue`);
+    if (!r.ok) throw new Error('Catalogue unavailable');
+    const products = await r.json();
+    buPriceEdits = {};
+    container.innerHTML = products.map(p => `
+      <div class="bu-product-item">
+        <div class="bu-product-row">
+          <span class="bu-product-name" title="${p.name}">${p.name}</span>
+          <span class="bu-price-prefix">R</span>
+          <input class="bu-price-input" data-slug="${p.slug || p.name}" value="${p.price || ''}"
+            oninput="buPriceEdits['${p.slug || p.name}'] = this.value" type="number" min="0">
+        </div>
+        <div class="bu-product-meta">
+          <span class="bu-product-slug">${p.slug || ''}</span>
+          ${p.package_type ? `<span class="bu-product-pkg">${p.package_type.replace(/_/g,' ')}</span>` : ''}
+          ${p.cached ? '<span class="bu-product-pkg" style="color:var(--accent);border-color:var(--accent)">cached</span>' : ''}
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    container.innerHTML = `<div class="bu-empty-state"><div class="bu-empty-icon">&#x26A0;</div>${e.message}</div>`;
+  }
+}
+
+async function buSavePrices() {
+  if (!Object.keys(buPriceEdits).length) { buToast('No price changes to save'); return; }
+  const base = buServerBase();
+  const updates = { price_edits: buPriceEdits };
+  try {
+    const r = await fetch(`${base}/api/business/update`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ business_id: buBusinessId(), category: 'product', updates })
+    });
+    const data = await r.json();
+    if (data.success) {
+      buState = data.state;
+      buPriceEdits = {};
+      buToast(`Prices updated (${Object.keys(data.changes).length} changes)`, 'success');
+    } else { buToast(data.error || 'Update failed', 'error'); }
+  } catch (e) { buToast('Save failed: ' + e.message, 'error'); }
+}
+
+async function buAddProduct() {
+  const name = document.getElementById('bu-newProductName').value.trim();
+  const price = parseInt(document.getElementById('bu-newProductPrice').value);
+  const desc = document.getElementById('bu-newProductDesc').value.trim();
+  const pkg = document.getElementById('bu-newProductPkg').value;
+  if (!name) { buToast('Product name is required', 'error'); return; }
+  const base = buServerBase();
+  try {
+    const r = await fetch(`${base}/api/business/update`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        business_id: buBusinessId(), category: 'product',
+        updates: { new_product: { name, price, description: desc, package_type: pkg } }
+      })
+    });
+    const data = await r.json();
+    if (data.success) {
+      buToast(`Product "${name}" added`, 'success');
+      document.getElementById('bu-newProductName').value = '';
+      document.getElementById('bu-newProductPrice').value = '';
+      document.getElementById('bu-newProductDesc').value = '';
+      buLoadProducts();
+    } else { buToast(data.error || 'Failed', 'error'); }
+  } catch (e) { buToast('Error: ' + e.message, 'error'); }
+}
+
+// ── Brand tab ──
+async function buSaveBrand() {
+  const base = buServerBase();
+  const updates = {
+    display_name: document.getElementById('bu-displayName').value.trim(),
+    identity: {
+      brand_label_text: document.getElementById('bu-labelText').value.trim(),
+      tone_of_voice: document.getElementById('bu-toneOfVoice').value.trim(),
+      target_market: document.getElementById('bu-targetMarket').value.trim(),
+      brand_story: document.getElementById('bu-brandStory').value.trim(),
+      colors: {
+        primary: document.getElementById('bu-colorPrimary').value.trim(),
+        secondary: document.getElementById('bu-colorSecondary').value.trim(),
+        accent_gold: document.getElementById('bu-colorAccent').value.trim(),
+      }
+    },
+    image_gen: { default_style_recipe: document.getElementById('bu-defaultStyle').value.trim() }
+  };
+  try {
+    const r = await fetch(`${base}/api/business/update`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ business_id: buBusinessId(), category: 'brand', updates })
+    });
+    const data = await r.json();
+    if (data.success) {
+      buState = data.state;
+      document.getElementById('buBusinessLabel').textContent = buState.display_name || buState.business_name;
+      buToast('Brand identity saved', 'success');
+    } else { buToast(data.error || 'Failed', 'error'); }
+  } catch (e) { buToast('Error: ' + e.message, 'error'); }
+}
+
+// ── Operations tab ──
+async function buSaveOperations() {
+  const base = buServerBase();
+  const delivery = ['courier','local','collection','paxi']
+    .filter(id => document.getElementById('del-' + id)?.checked)
+    .map(id => document.getElementById('del-' + id).value);
+  const payments = ['eft','cash','snapscan','zapper','card','ozow']
+    .filter(id => document.getElementById('pay-' + id)?.checked)
+    .map(id => document.getElementById('pay-' + id).value);
+  const updates = {
+    operations: {
+      delivery_methods: delivery,
+      payment_methods: payments,
+      hours: {
+        weekday: document.getElementById('bu-hoursWeekday').value.trim(),
+        weekend: document.getElementById('bu-hoursWeekend').value.trim(),
+      }
+    }
+  };
+  try {
+    const r = await fetch(`${base}/api/business/update`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ business_id: buBusinessId(), category: 'operations', updates })
+    });
+    const data = await r.json();
+    if (data.success) { buState = data.state; buToast('Operations saved', 'success'); }
+    else { buToast(data.error || 'Failed', 'error'); }
+  } catch (e) { buToast('Error: ' + e.message, 'error'); }
+}
+
+// ── Contacts tab ──
+async function buSaveContacts() {
+  const base = buServerBase();
+  const updates = {
+    contacts: {
+      phone: document.getElementById('bu-phone').value.trim(),
+      email: document.getElementById('bu-email').value.trim(),
+      website: document.getElementById('bu-website').value.trim(),
+      instagram: document.getElementById('bu-instagram').value.trim(),
+      facebook: document.getElementById('bu-facebook').value.trim(),
+      tiktok: document.getElementById('bu-tiktok').value.trim(),
+    }
+  };
+  try {
+    const r = await fetch(`${base}/api/business/update`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ business_id: buBusinessId(), category: 'contacts', updates })
+    });
+    const data = await r.json();
+    if (data.success) { buState = data.state; buToast('Contact details saved', 'success'); }
+    else { buToast(data.error || 'Failed', 'error'); }
+  } catch (e) { buToast('Error: ' + e.message, 'error'); }
+}
+
+// ── Promotions tab ──
+function buLoadPromos() {
+  if (!buState) return;
+  const container = document.getElementById('buPromoList');
+  const promos = buState.active_promotions || [];
+  if (!promos.length) {
+    container.innerHTML = '<div class="bu-empty-state"><div class="bu-empty-icon">&#x1F3F7;</div>No active promotions</div>';
+    return;
+  }
+  container.innerHTML = promos.map(p => `
+    <div class="bu-promo-item">
+      <div class="bu-promo-header">
+        <span class="bu-promo-name">${p.name}</span>
+        <span class="bu-promo-badge ${p.active ? 'active' : 'expired'}">${p.active ? 'Active' : 'Expired'}</span>
+      </div>
+      <div class="bu-promo-detail">
+        Type: ${p.type.replace(/_/g,' ')}<br>
+        Value: ${p.value}${p.type === 'percentage_discount' ? '%' : ' ZAR'}<br>
+        Products: ${Array.isArray(p.products) ? p.products.join(', ') : p.products}<br>
+        ${p.starts ? 'From: ' + p.starts + '&nbsp;&nbsp;' : ''}${p.expires ? 'Until: ' + p.expires : ''}
+      </div>
+      <button class="bu-promo-expire-btn" onclick="buExpirePromo('${p.id}')">&#x274C; Expire this promotion</button>
+    </div>`).join('');
+}
+
+async function buCreatePromo() {
+  const name = document.getElementById('bu-promoName').value.trim();
+  if (!name) { buToast('Promotion name required', 'error'); return; }
+  const base = buServerBase();
+  const promo = {
+    name,
+    type: document.getElementById('bu-promoType').value,
+    value: parseFloat(document.getElementById('bu-promoValue').value) || 0,
+    products: [document.getElementById('bu-promoProducts').value],
+    starts: document.getElementById('bu-promoStart').value,
+    expires: document.getElementById('bu-promoEnd').value,
+    active: true,
+  };
+  try {
+    const r = await fetch(`${base}/api/business/update`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ business_id: buBusinessId(), category: 'promotion', updates: { add_promotion: promo } })
+    });
+    const data = await r.json();
+    if (data.success) {
+      buState = data.state;
+      buToast(`Promotion "${name}" created`, 'success');
+      ['bu-promoName','bu-promoValue','bu-promoStart','bu-promoEnd'].forEach(id => document.getElementById(id).value = '');
+      buLoadPromos();
+    } else { buToast(data.error || 'Failed', 'error'); }
+  } catch (e) { buToast('Error: ' + e.message, 'error'); }
+}
+
+async function buExpirePromo(promoId) {
+  const base = buServerBase();
+  try {
+    const r = await fetch(`${base}/api/business/update`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ business_id: buBusinessId(), category: 'promotion', updates: { expire_promotion: promoId } })
+    });
+    const data = await r.json();
+    if (data.success) { buState = data.state; buToast('Promotion expired', 'success'); buLoadPromos(); }
+    else { buToast(data.error || 'Failed', 'error'); }
+  } catch (e) { buToast('Error: ' + e.message, 'error'); }
+}
+
+// ── Preview tab ──
+async function buLoadPreview() {
+  await buLoadState();
+  if (!buState) return;
+  const s = buState;
+  const id = s.identity || {};
+  const colors = id.colors || {};
+  const cat = s.catalogue || {};
+  const ig = s.image_gen || {};
+  const promos = s.active_promotions || [];
+  const ops = s.operations || {};
+
+  const swatchHtml = (hex, label) => hex
+    ? `<span class="bu-color-dot" style="background:${hex}"></span>${label} <span style="color:var(--text-muted);font-size:10px">${hex}</span>`
+    : '—';
+
+  document.getElementById('buPreviewContent').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px">
+      <div class="bu-brand-badge">${id.brand_label_text || s.business_name || 'DR GEE'}</div>
+      <div style="font-size:13px;color:var(--text-muted)">${s.display_name || ''} &mdash; Est. 1992</div>
+    </div>
+
+    <div class="bu-preview-card">
+      <div class="bu-preview-card-title">&#x1F3A8; Brand Identity</div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Display Name</span><span class="bu-preview-val">${s.display_name || '—'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Label Text</span><span class="bu-preview-val" style="font-weight:700;letter-spacing:1px">${id.brand_label_text || '—'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Primary</span><span class="bu-preview-val">${swatchHtml(colors.primary, '')}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Secondary</span><span class="bu-preview-val">${swatchHtml(colors.secondary, '')}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Accent Gold</span><span class="bu-preview-val">${swatchHtml(colors.accent_gold, '')}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Target Market</span><span class="bu-preview-val">${id.target_market || '—'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Brand Story</span><span class="bu-preview-val">${id.brand_story || '—'}</span></div>
+    </div>
+
+    <div class="bu-preview-card">
+      <div class="bu-preview-card-title">&#x1F5E3; Tone of Voice</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.6;font-style:italic">"${id.tone_of_voice || '—'}"</div>
+    </div>
+
+    <div class="bu-preview-card">
+      <div class="bu-preview-card-title">&#x1F4E6; Catalogue</div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Products</span><span class="bu-preview-val">${cat.product_count || '—'} active</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">CRM Products</span><span class="bu-preview-val">${(s.crm || {}).product_count_crm || '—'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Image Cached</span><span class="bu-preview-val">${cat.cached_product_count || 0} products</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Package Types</span><span class="bu-preview-val">${(cat.package_types || []).length} types</span></div>
+    </div>
+
+    <div class="bu-preview-card">
+      <div class="bu-preview-card-title">&#x1F3F7; Promotions</div>
+      ${promos.length
+        ? promos.map(p => `<div class="bu-preview-row"><span class="bu-preview-key">${p.name}</span><span class="bu-preview-val" style="color:var(--accent)">${p.value}${p.type==='percentage_discount'?'% off':'R off'} — until ${p.expires||'?'}</span></div>`).join('')
+        : '<div style="font-size:12px;color:var(--text-muted)">No active promotions</div>'
+      }
+    </div>
+
+    <div class="bu-preview-card">
+      <div class="bu-preview-card-title">&#x1F5BC; Image Generation</div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Model</span><span class="bu-preview-val">${ig.model || '—'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Format</span><span class="bu-preview-val">${ig.aspect_ratio || '—'} ${ig.resolution || ''}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Named Styles</span><span class="bu-preview-val">${Object.keys(ig.named_styles || {}).join(', ') || 'None'}</span></div>
+    </div>
+
+    <div class="bu-preview-card">
+      <div class="bu-preview-card-title">&#x2699; Operations</div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Delivery</span><span class="bu-preview-val">${(ops.delivery_methods || []).join(', ') || 'Not set'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Payment</span><span class="bu-preview-val">${(ops.payment_methods || []).join(', ') || 'Not set'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Hours</span><span class="bu-preview-val">${(ops.hours || {}).weekday || 'Not set'}</span></div>
+    </div>
+
+    <div class="bu-preview-card">
+      <div class="bu-preview-card-title">&#x1F4F1; WhatsApp &amp; CRM</div>
+      <div class="bu-preview-row"><span class="bu-preview-key">WhatsApp</span><span class="bu-preview-val" style="color:${(s.whatsapp||{}).status==='not_configured'?'var(--text-muted)':'var(--accent)'}">${(s.whatsapp||{}).status==='not_configured'?'Pending META setup':'Configured'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">CRM</span><span class="bu-preview-val">${(s.crm||{}).base_url || '—'}</span></div>
+      <div class="bu-preview-row"><span class="bu-preview-key">Last Updated</span><span class="bu-preview-val">${s.last_updated ? new Date(s.last_updated).toLocaleString() : '—'}</span></div>
+    </div>
+  `;
+
+  // Load operations log
+  try {
+    const base = buServerBase();
+    const r = await fetch(`${base}/api/business/recent-operations?id=${buBusinessId()}&limit=10`);
+    const ops_log = await r.json();
+    const logEl = document.getElementById('buOpLog');
+    if (!ops_log.length) {
+      logEl.innerHTML = '<div class="bu-empty-state"><div class="bu-empty-icon">&#x1F4CB;</div>No operations logged yet</div>';
+    } else {
+      logEl.innerHTML = ops_log.reverse().map(op => {
+        const changes = Object.keys(op.changes || {});
+        return `<div class="bu-op-log-item">
+          <div class="bu-op-log-time">${new Date(op.timestamp).toLocaleString()} &mdash; <strong>${op.category}</strong></div>
+          <div class="bu-op-log-desc">${changes.length ? changes.join(', ') : JSON.stringify(op.changes).slice(0,80)}</div>
+        </div>`;
+      }).join('');
+    }
+  } catch { /* log unavailable */ }
+}
+
+// ── Brand Upload / AI Extraction ──
+function openBrandUpload() {
+  document.getElementById('buUploadOverlay').classList.add('open');
+  document.getElementById('buExtractedSection').style.display = 'none';
+  document.getElementById('buAnalyzingBar').style.display = 'none';
+  const drop = document.getElementById('buUploadDrop');
+  drop.innerHTML = `<div class="bu-upload-drop-icon">&#x1F4F7;</div>
+    <div class="bu-upload-drop-text"><strong>Tap to select file</strong><br>or drag &amp; drop here<br><span style="font-size:11px">Images, PDF, TXT, CSV</span></div>`;
+}
+
+function closeBrandUpload() {
+  document.getElementById('buUploadOverlay').classList.remove('open');
+}
+
+function buCloseUploadOnBg(e) {
+  if (e.target === document.getElementById('buUploadOverlay')) closeBrandUpload();
+}
+
+function buHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('buUploadDrop').classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  if (file) buProcessFile(file);
+}
+
+function buHandleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) buProcessFile(file);
+  e.target.value = '';
+}
+
+async function buProcessFile(file) {
+  const drop = document.getElementById('buUploadDrop');
+  drop.innerHTML = `<div class="bu-upload-drop-icon">&#x1F4C4;</div><div class="bu-upload-drop-text"><strong>${file.name}</strong><br>${(file.size/1024).toFixed(0)} KB</div>`;
+
+  document.getElementById('buAnalyzingBar').style.display = 'block';
+  document.getElementById('buExtractedSection').style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const b64 = ev.target.result; // full data URI
+    const base = buServerBase();
+    try {
+      const r = await fetch(`${base}/api/business/analyze-upload`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ file_data: b64, mime_type: file.type || 'image/png', file_name: file.name })
+      });
+      const data = await r.json();
+      document.getElementById('buAnalyzingBar').style.display = 'none';
+      if (data.success && data.extracted) {
+        buExtractedData = data.extracted;
+        buRenderExtracted(data.extracted);
+      } else {
+        buToast('Analysis failed: ' + (data.error || 'Unknown error'), 'error');
+      }
+    } catch (e) {
+      document.getElementById('buAnalyzingBar').style.display = 'none';
+      buToast('Upload error: ' + e.message, 'error');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function buRenderExtracted(data) {
+  const container = document.getElementById('buExtractedList');
+  const items = [];
+
+  const flat = (obj, prefix = '') => {
+    Object.entries(obj).forEach(([k, v]) => {
+      if (v === null || v === undefined || v === '') return;
+      if (typeof v === 'object' && !Array.isArray(v)) {
+        flat(v, prefix + k + '.');
+      } else {
+        items.push({ key: prefix + k, val: Array.isArray(v) ? v.join(', ') : String(v) });
+      }
+    });
+  };
+  flat(data);
+
+  if (!items.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">No structured data could be extracted.</div>';
+    document.getElementById('buExtractedSection').style.display = 'block';
+    return;
+  }
+
+  container.innerHTML = items.map((item, i) => `
+    <div class="bu-extracted-item">
+      <input type="checkbox" id="buEx-${i}" checked>
+      <div>
+        <div class="bu-extracted-key">${item.key}</div>
+        <div class="bu-extracted-val">${item.val}</div>
+      </div>
+    </div>`).join('');
+
+  container.dataset.items = JSON.stringify(items);
+  document.getElementById('buExtractedSection').style.display = 'block';
+}
+
+function buApplyExtracted() {
+  const container = document.getElementById('buExtractedList');
+  const items = JSON.parse(container.dataset.items || '[]');
+  const selected = items.filter((_, i) => document.getElementById('buEx-' + i)?.checked);
+
+  selected.forEach(({ key, val }) => {
+    const k = key.toLowerCase();
+    if (k.includes('display_name') || k === 'display name') _buSet('bu-displayName', val);
+    else if (k.includes('label_text') || k.includes('brand_label')) _buSet('bu-labelText', val);
+    else if (k.includes('tone_of_voice') || k.includes('tone of voice')) _buSet('bu-toneOfVoice', val);
+    else if (k.includes('target_market') || k.includes('target market')) _buSet('bu-targetMarket', val);
+    else if (k.includes('brand_story') || k.includes('story')) _buSet('bu-brandStory', val);
+    else if (k.includes('colors.primary') || k === 'primary') { _buSet('bu-colorPrimary', val); if(/^#[0-9a-f]{6}$/i.test(val)) document.getElementById('bu-colorPrimaryPicker').value = val; }
+    else if (k.includes('colors.secondary') || k === 'secondary') { _buSet('bu-colorSecondary', val); if(/^#[0-9a-f]{6}$/i.test(val)) document.getElementById('bu-colorSecondaryPicker').value = val; }
+    else if (k.includes('colors.accent') || k === 'accent') { _buSet('bu-colorAccent', val); if(/^#[0-9a-f]{6}$/i.test(val)) document.getElementById('bu-colorAccentPicker').value = val; }
+    else if (k.includes('contacts.phone') || k === 'phone') _buSet('bu-phone', val);
+    else if (k.includes('contacts.email') || k === 'email') _buSet('bu-email', val);
+    else if (k.includes('contacts.website') || k === 'website') _buSet('bu-website', val);
+    else if (k.includes('contacts.instagram') || k === 'instagram') _buSet('bu-instagram', val);
+    else if (k.includes('contacts.facebook') || k === 'facebook') _buSet('bu-facebook', val);
+  });
+
+  closeBrandUpload();
+  buSwitchTab('brand');
+  buToast(`Applied ${selected.length} field${selected.length !== 1 ? 's' : ''} to forms`, 'success');
 }
 
 // ============================================================
