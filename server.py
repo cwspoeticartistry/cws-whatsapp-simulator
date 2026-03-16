@@ -301,6 +301,64 @@ def find_product(text, catalogue):
     return best_match
 
 
+def find_all_products(text: str, cat: list) -> list:
+    """Return every product whose full name appears in text (case-insensitive)."""
+    t = text.lower()
+    return [p for p in cat if p["name"].lower() in t]
+
+
+# Intent constants
+_INTENT_SINGLE    = "single"
+_INTENT_MULTI     = "multi"
+_INTENT_CATALOGUE = "catalogue"
+_INTENT_BRAND     = "brand"
+_INTENT_AMBIGUOUS = "ambiguous"
+
+# Positive feedback keywords
+_FEEDBACK_POSITIVE = {
+    "yes", "happy", "looks good", "perfect", "great", "love it",
+    "good", "nice", "approved", "approve", "love", "beautiful", "excellent",
+}
+
+
+def classify_intent(msg_text: str, cat: list) -> dict:
+    """
+    Classify the intent of a chat message.
+    Returns {"intent": str, "products": list}
+    """
+    t = msg_text.lower().strip()
+
+    # Explicit catalogue listing request
+    catalogue_kws = [
+        "list all", "show all", "all products", "full catalogue",
+        "full catalog", "what products do you have", "show me everything",
+    ]
+    if any(kw in t for kw in catalogue_kws):
+        return {"intent": _INTENT_CATALOGUE, "products": []}
+
+    # Brand / colour question
+    brand_kws = [
+        "brand colour", "brand color", "colour palette", "color palette",
+        "brand info", "about dr gee", "brand detail", "label colour", "label color",
+    ]
+    if any(kw in t for kw in brand_kws):
+        return {"intent": _INTENT_BRAND, "products": []}
+
+    # Find all exact product name matches
+    matched = find_all_products(t, cat)
+    if len(matched) == 1:
+        return {"intent": _INTENT_SINGLE, "products": matched}
+    if len(matched) > 1:
+        return {"intent": _INTENT_MULTI, "products": matched}
+
+    # Try fuzzy single match
+    fuzzy = find_product(t, cat)
+    if fuzzy:
+        return {"intent": _INTENT_SINGLE, "products": [fuzzy]}
+
+    return {"intent": _INTENT_AMBIGUOUS, "products": []}
+
+
 # ---------------------------------------------------------------------------
 # Prompt assembly
 # ---------------------------------------------------------------------------
@@ -591,6 +649,26 @@ CORS(app)
 _jobs: dict = {}
 _jobs_lock = threading.Lock()
 
+# ---------------------------------------------------------------------------
+# Session state — per-sender context for feedback loop & clarification
+# ---------------------------------------------------------------------------
+_session_state: dict = {}
+_session_lock = threading.Lock()
+
+def _get_session(sender: str) -> dict:
+    with _session_lock:
+        return dict(_session_state.get(sender, {}))
+
+def _set_session(sender: str, updates: dict):
+    with _session_lock:
+        _session_state.setdefault(sender, {}).update(updates)
+
+def _clear_session(sender: str, *keys):
+    with _session_lock:
+        s = _session_state.get(sender, {})
+        for k in keys:
+            s.pop(k, None)
+
 def _new_job():
     """Create a new job queue. Returns (job_id, queue)."""
     jid = uuid.uuid4().hex[:10]
@@ -851,9 +929,8 @@ def webhook():
         msg_text = data.get("message", {}).get("text", "").strip()
         sender = data.get("sender", {}).get("name", "User")
         selected_product = data.get("selected_product", None)
-        scene_description = data.get("scene_description", None)
 
-        # Handle simple replies synchronously (no job needed)
+        # --- Greeting ---
         greetings = ["hi", "hello", "hey", "howzit", "good morning", "good afternoon"]
         if msg_text.lower().strip() in greetings:
             return jsonify({
@@ -867,21 +944,61 @@ def webhook():
                 )
             })
 
-        if any(kw in msg_text.lower() for kw in ["list", "products", "catalogue", "catalog", "all products"]):
+        # --- Feedback loop: awaiting a response after a generation ---
+        session = _get_session(sender)
+        if session.get("awaiting_feedback") and msg_text:
+            jid, _ = _new_job()
+            threading.Thread(
+                target=_handle_feedback_job,
+                args=(jid, sender, msg_text),
+                daemon=True,
+            ).start()
+            return jsonify({"job_id": jid})
+
+        # --- Selected product from catalogue browser (skip text classification) ---
+        if selected_product:
+            jid, _ = _new_job()
+            threading.Thread(target=_process_request, args=(jid, data), daemon=True).start()
+            return jsonify({"job_id": jid})
+
+        if not msg_text:
+            return jsonify({"reply": "Please tell me which product you'd like, or use the catalogue to select one."})
+
+        # --- Intent classification ---
+        intent_result = classify_intent(msg_text, catalogue)
+        intent  = intent_result["intent"]
+        matched = intent_result["products"]
+
+        if intent == _INTENT_CATALOGUE:
             product_list = "\n".join([f"  - {p['name']} (R{p.get('price', '?')})" for p in catalogue])
             return jsonify({"reply": f"Dr Gee Product Catalogue:\n\n{product_list}"})
 
-        if not msg_text and not selected_product:
-            return jsonify({"reply": "Please tell me which product you'd like, or use the catalogue to select one."})
+        if intent == _INTENT_BRAND:
+            return jsonify({"reply": (
+                "Dr Gee brand details:\n\n"
+                "Label style: Dark charcoal/black background, gold ornamental scrollwork, cream/gold typography.\n"
+                "Colours: Charcoal black (#1a1a1a), Gold (#c9a84c), Cream (#f5f0e8)\n"
+                "Brand name on labels: DR GEE (uppercase, no period, gold serif font)\n"
+                "Aesthetic: Premium herbal wellness — dark, gold, authoritative yet natural."
+            )})
 
-        # Create job and start background processing
+        if intent == _INTENT_MULTI:
+            names_str = "\n".join([f"  {i+1}. {p['name']}" for i, p in enumerate(matched)])
+            return jsonify({"reply": (
+                f"I found {len(matched)} matching products:\n\n{names_str}\n\n"
+                f"Which one would you like to generate an image for? "
+                f"(Or tap the catalogue button to browse all products)"
+            )})
+
+        if intent == _INTENT_AMBIGUOUS:
+            return jsonify({"reply": (
+                "I'm not sure which product you mean. Could you be more specific?\n\n"
+                "Try typing the full product name, or tap the catalogue button to browse all 45 products."
+            )})
+
+        # intent == _INTENT_SINGLE — proceed with generation
         jid, _ = _new_job()
-        thread = threading.Thread(
-            target=_process_request,
-            args=(jid, data),
-            daemon=True,
-        )
-        thread.start()
+        threading.Thread(target=_process_request, args=(jid, data), daemon=True).start()
         return jsonify({"job_id": jid})
 
     except Exception as e:
@@ -979,6 +1096,13 @@ def _process_request(jid: str, data: dict):
 
         print(f"[Job {jid}] Product: {name} (R{price}) | Cache: {'hit' if cache_entry else 'miss'} | Ref: {img_file or 'none'} | Scene: {'yes' if scene_b64 else 'no'}")
 
+        # Stream prompts immediately — user sees the thinking while generation runs
+        _emit(jid, "prompt_ready", "Prompts ready — generating image...", {
+            "image_prompt": image_prompt,
+            "video_prompt": video_prompt,
+            "product": {"name": name, "price": price, "slug": slug},
+        })
+
         # Generate image
         image_url = None
         local_path = None
@@ -1048,11 +1172,69 @@ def _process_request(jid: str, data: dict):
         if notion_url:
             payload["notion_url"] = notion_url
 
+        payload["request_feedback"] = True
         _emit(jid, "done", "Done!", payload)
+
+        # Set feedback state so next message from this sender is treated as feedback
+        _set_session(sender, {
+            "awaiting_feedback": True,
+            "last_product": name,
+            "last_slug": slug,
+            "last_notion_url": notion_url,
+        })
 
     except Exception as e:
         traceback.print_exc()
         _emit(jid, "error", f"Unexpected error: {str(e)}")
+
+
+# ---------------------------------------------------------------------------
+# Feedback job
+# ---------------------------------------------------------------------------
+
+def _handle_feedback_job(jid: str, sender: str, feedback_text: str):
+    """Background thread — saves user feedback to Notion, clears session state."""
+    def progress(msg):
+        _emit(jid, "step", msg)
+
+    session = _get_session(sender)
+    product_name = session.get("last_product", "Unknown product")
+    notion_url   = session.get("last_notion_url")
+
+    # Clear feedback state immediately — next message is a new request
+    _clear_session(sender, "awaiting_feedback", "last_product", "last_slug", "last_notion_url")
+
+    is_positive = any(kw in feedback_text.lower() for kw in _FEEDBACK_POSITIVE)
+
+    # Write feedback to Notion
+    if notion_url:
+        progress("Saving your feedback to Notion...")
+        try:
+            from post_to_notion import append_feedback_to_notion_page
+            import os as _os
+            api_key = _os.environ.get("NOTION_API_KEY")
+            if api_key:
+                # Extract 32-char hex page ID from the Notion URL
+                m = re.search(r"([0-9a-f]{32})$", notion_url.rstrip("/").split("?")[0])
+                if m:
+                    append_feedback_to_notion_page(api_key, m.group(1), feedback_text, product_name)
+                    progress("Feedback saved to Notion")
+        except Exception as e:
+            progress(f"Could not write to Notion: {str(e)[:60]}")
+
+    if is_positive:
+        reply = (
+            f"Great to hear! Approval for *{product_name}* has been noted in Notion. "
+            f"What would you like to generate next?"
+        )
+    else:
+        reply = (
+            f"Got it — your feedback on *{product_name}* has been saved in Notion. "
+            f"Next time I generate this product I'll check those notes first and adjust the prompt. "
+            f"What would you like to generate next?"
+        )
+
+    _emit(jid, "done", reply, {"reply": reply, "feedback_saved": True})
 
 
 # ---------------------------------------------------------------------------
