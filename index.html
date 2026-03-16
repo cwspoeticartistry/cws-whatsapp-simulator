@@ -1521,10 +1521,22 @@ function goHome() {
 // ============================================================
 // SETTINGS
 // ============================================================
+function _autoServerBase() {
+  // When loaded from the local Flask server (http://192.168.x.x:5055/sim),
+  // use window.location.origin automatically — no manual config needed.
+  const stored = localStorage.getItem('cws_server_base');
+  if (stored) return stored;
+  const origin = window.location.origin;
+  if (!origin.includes('github.io') && !origin.includes('localhost:80') && origin.startsWith('http://')) {
+    return origin;
+  }
+  return '';
+}
+
 function loadSettings() {
   return {
     webhookUrl:  localStorage.getItem('cws_webhook_url')  || '',
-    serverBase:  localStorage.getItem('cws_server_base')   || '',
+    serverBase:  _autoServerBase(),
     businessId:  localStorage.getItem('cws_business_id')   || 'dr-gee',
     senderName:  localStorage.getItem('cws_sender_name')   || 'Test User',
   };
@@ -1532,7 +1544,7 @@ function loadSettings() {
 
 function openSettings() {
   const s = loadSettings();
-  document.getElementById('webhookUrl').value  = s.webhookUrl;
+  document.getElementById('webhookUrl').value  = s.webhookUrl || (_autoServerBase() ? _autoServerBase() + '/webhook' : '');
   document.getElementById('serverBase').value  = s.serverBase;
   document.getElementById('businessId').value  = s.businessId;
   document.getElementById('senderName').value  = s.senderName;
@@ -2164,7 +2176,7 @@ const BU_SCENE = {
 };
 
 function buServerBase() {
-  return localStorage.getItem('cws_server_base') || '';
+  return _autoServerBase();
 }
 
 function buBusinessId() {

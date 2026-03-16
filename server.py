@@ -1143,6 +1143,25 @@ def api_recent_operations():
     return jsonify(entries[-limit:])
 
 
+@app.route("/api/generated-list", methods=["GET"])
+def api_generated_list():
+    limit = int(request.args.get("limit", 30))
+    files = []
+    if GENERATED_DIR.exists():
+        for f in sorted(GENERATED_DIR.glob("*.png"), key=lambda x: x.stat().st_mtime, reverse=True):
+            slug = f.stem.split("_social_")[0] if "_social_" in f.stem else f.stem
+            files.append({"filename": f.name, "slug": slug, "url": f"/api/generated/{quote(f.name)}"})
+    return jsonify(files[:limit])
+
+
+@app.route("/sim", methods=["GET"])
+@app.route("/sim/", methods=["GET"])
+def simulator_ui():
+    """Serve the simulator index.html over HTTP so phones on the same WiFi
+    can make API calls without HTTPS → HTTP mixed-content blocks."""
+    return send_from_directory(Path(__file__).parent, "index.html")
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()})
@@ -1162,7 +1181,8 @@ if __name__ == "__main__":
         s.connect(("8.8.8.8", 80))
         local_ip = s.getsockname()[0]
         s.close()
-        print(f"  Phone: http://{local_ip}:{port}\n")
+        print(f"  Phone (simulator): http://{local_ip}:{port}/sim")
+        print(f"  Webhook:           http://{local_ip}:{port}/webhook\n")
     except Exception:
         pass
     app.run(host="0.0.0.0", port=port, debug=False)
