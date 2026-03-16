@@ -1039,6 +1039,16 @@
   .bu-analyzing { text-align:center; padding:24px; color:#64748b; font-size:13px; }
   .bu-refresh-btn { background:none; border:1px solid rgba(59,130,246,.2); border-radius:8px; color:#64748b; font-size:10px; padding:3px 10px; cursor:pointer; float:right; transition:all .2s; }
   .bu-refresh-btn:hover { border-color:rgba(59,130,246,.5); color:#60a5fa; }
+  .bu-gen-overlay { position:fixed;inset:0;background:rgba(6,9,18,.92);z-index:9000;display:none;align-items:center;justify-content:center; }
+  .bu-gen-overlay.active { display:flex; }
+  .bu-gen-panel { background:#0f1c30;border:1px solid rgba(59,130,246,.2);border-radius:20px;padding:32px;max-width:340px;width:90%;text-align:center; }
+  .bu-gen-spin { width:44px;height:44px;border:3px solid rgba(59,130,246,.2);border-top-color:#3b82f6;border-radius:50%;animation:buSpin 1s linear infinite;margin:0 auto 16px; }
+  .bu-gen-title { font-size:16px;font-weight:700;color:#e2e8f0;margin-bottom:12px; }
+  .bu-gen-steps { text-align:left;max-height:160px;overflow-y:auto;margin-bottom:12px; }
+  .bu-gen-step { font-size:11px;color:#64748b;padding:3px 0;border-bottom:1px solid rgba(59,130,246,.06); }
+  .bu-gen-step.active { color:#60a5fa; }
+  .bu-gen-step.done { color:#34d399; }
+  .bu-gen-sub { font-size:11px;color:#64748b; }
 </style>
 </head>
 <body>
@@ -1275,7 +1285,7 @@
     </div>
 
     <div class="bu-cv-section" style="margin-top:20px; padding-bottom:0">
-      <div class="bu-cv-label">Product Showcase &mdash; Natural Scenes &middot; Black SA Lifestyle</div>
+      <div class="bu-cv-label">Product Showcase &mdash; Natural Scenes &middot; Black SA Lifestyle <button class="bu-refresh-btn" onclick="buGenerateAll()">&#x2728; Generate All</button></div>
     </div>
     <div class="bu-showcase-row" id="cvShowcase">
       <div class="bu-empty" style="min-width:100%;padding:16px 0"><span class="bu-spinner"></span></div>
@@ -1441,6 +1451,16 @@
 
 <!-- Toast -->
 <div class="bu-toast" id="buToast"></div>
+
+<!-- Generation Overlay -->
+<div class="bu-gen-overlay" id="buGenOverlay">
+  <div class="bu-gen-panel">
+    <div class="bu-gen-spin"></div>
+    <div class="bu-gen-title" id="buGenTitle">Updating showcase...</div>
+    <div class="bu-gen-steps" id="buGenSteps"></div>
+    <div class="bu-gen-sub" id="buGenSub">This may take a few minutes</div>
+  </div>
+</div>
 
 <!-- ===== CATALOGUE DRAWER ===== -->
 <div class="catalogue-overlay" id="catOverlay" onclick="closeCatalogue()"></div>
@@ -2312,45 +2332,127 @@ async function buRenderShowcase() {
   const showcase = document.getElementById('cvShowcase');
   if (!showcase) return;
   const base = buServerBase();
-  if (!base) {
+  const onGitHubPages = window.location.hostname === 'cwspoeticartistry.github.io';
+
+  // Build slug → image URL map: try manifest.json first (works on GitHub Pages too),
+  // then fall back to /api/generated-list from local server
+  const genMap = {};
+  try {
+    const manifestRes = await fetch('generated/manifest.json', { cache: 'no-store' });
+    if (manifestRes.ok) {
+      const manifest = await manifestRes.json();
+      Object.entries(manifest.images || {}).forEach(([slug, filename]) => {
+        genMap[slug] = onGitHubPages
+          ? `generated/${filename}`
+          : (base ? `${base}/api/generated/${filename}` : `generated/${filename}`);
+      });
+    }
+  } catch (_) {}
+
+  // If no images from manifest yet and server available, fall back to API list
+  if (!Object.keys(genMap).length && base) {
+    try {
+      const genRes = await fetch(`${base}/api/generated-list?limit=20`).then(r => r.ok ? r.json() : []);
+      (Array.isArray(genRes) ? genRes : []).forEach(g => {
+        if (g.slug && g.url) genMap[g.slug] = `${base}${g.url}`;
+      });
+    } catch (_) {}
+  }
+
+  // Fetch catalogue
+  let products = [];
+  if (base) {
+    try {
+      products = await fetch(`${base}/api/catalogue`).then(r => r.ok ? r.json() : []);
+    } catch (_) {}
+  }
+  if (!products.length && !base) {
     showcase.innerHTML = '<div class="bu-empty" style="min-width:100%;padding:12px 0;font-size:11px;color:#64748b">Start server to see product showcase</div>';
     return;
   }
-  try {
-    const [catRes, genRes] = await Promise.all([
-      fetch(`${base}/api/catalogue`).then(r => r.ok ? r.json() : []),
-      fetch(`${base}/api/generated-list?limit=20`).then(r => r.ok ? r.json() : [])
-    ]);
-
-    // Build slug → generated image map
-    const genMap = {};
-    (Array.isArray(genRes) ? genRes : (genRes.images || [])).forEach(g => {
-      if (g.slug && g.url) genMap[g.slug] = g.url;
-    });
-
-    const products = Array.isArray(catRes) ? catRes.slice(0, 16) : [];
-    if (!products.length) {
-      showcase.innerHTML = '<div class="bu-empty" style="min-width:100%;padding:12px 0;font-size:11px;color:#64748b">No products found</div>';
-      return;
-    }
-
-    showcase.innerHTML = products.map(p => {
-      const scene = BU_SCENE[p.package_type] || BU_SCENE.default;
-      const imgUrl = genMap[p.slug];
-      const shortName = p.name.length > 20 ? p.name.slice(0, 18) + '…' : p.name;
-      return `<div class="bu-sc-card" onclick="buToast('${shortName.replace(/'/g,"&#39;")} — R${p.price || "?"}')">
-        <div class="bu-sc-scene" style="background:${scene}">
-          ${imgUrl
-            ? `<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px 10px 0 0;opacity:.85">`
-            : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:28px">🌿</div>`}
-        </div>
-        <div class="bu-sc-name">${shortName}</div>
-        <div class="bu-sc-price">R${p.price || '—'}</div>
-      </div>`;
-    }).join('');
-  } catch (e) {
-    showcase.innerHTML = `<div class="bu-empty" style="min-width:100%;padding:12px 0;font-size:11px;color:#64748b">Showcase unavailable</div>`;
+  if (!products.length) {
+    showcase.innerHTML = '<div class="bu-empty" style="min-width:100%;padding:12px 0;font-size:11px;color:#64748b">No products found</div>';
+    return;
   }
+
+  showcase.innerHTML = products.slice(0, 16).map(p => {
+    const scene = BU_SCENE[p.package_type] || BU_SCENE.default;
+    const imgUrl = genMap[p.slug];
+    const shortName = p.name.length > 20 ? p.name.slice(0, 18) + '\u2026' : p.name;
+    return `<div class="bu-sc-card" onclick="buToast('${shortName.replace(/'/g,"&#39;")} \u2014 R${p.price || "?"}')">
+      <div class="bu-sc-scene" style="background:${scene}">
+        ${imgUrl
+          ? `<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px 10px 0 0;opacity:.85">`
+          : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:28px">\uD83C\uDF3F</div>`}
+      </div>
+      <div class="bu-sc-name">${shortName}</div>
+      <div class="bu-sc-price">R${p.price || '\u2014'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Showcase generation overlay ──
+function buStartGenJob(jid) {
+  const overlay = document.getElementById('buGenOverlay');
+  const stepsEl = document.getElementById('buGenSteps');
+  const liveDot = document.getElementById('buLiveDot');
+  if (overlay) overlay.classList.add('active');
+  if (stepsEl) stepsEl.innerHTML = '';
+  if (liveDot) liveDot.style.display = 'inline-block';
+
+  let done = false;
+  async function poll() {
+    if (done) return;
+    try {
+      const base = buServerBase();
+      if (!base) { done = true; buGenComplete(); return; }
+      const r = await fetch(`${base}/api/poll/${jid}`);
+      if (!r.ok) { setTimeout(poll, 2000); return; }
+      const data = await r.json();
+      (data.events || []).forEach(ev => {
+        if (ev.type === 'step') {
+          const div = document.createElement('div');
+          div.className = 'bu-gen-step';
+          div.textContent = ev.message;
+          if (stepsEl) { stepsEl.appendChild(div); stepsEl.scrollTop = stepsEl.scrollHeight; }
+        } else if (ev.type === 'done') {
+          done = true;
+          buGenComplete();
+        } else if (ev.type === 'error') {
+          done = true;
+          const overlay2 = document.getElementById('buGenOverlay');
+          if (overlay2) overlay2.classList.remove('active');
+          if (liveDot) liveDot.style.display = 'none';
+          buToast(ev.message || 'Generation failed', 'error');
+        }
+      });
+    } catch (_) {}
+    if (!done) setTimeout(poll, 2000);
+  }
+  setTimeout(poll, 1000);
+}
+
+function buGenComplete() {
+  const overlay = document.getElementById('buGenOverlay');
+  const liveDot = document.getElementById('buLiveDot');
+  if (overlay) overlay.classList.remove('active');
+  if (liveDot) liveDot.style.display = 'none';
+  buRenderShowcase();
+  buToast('Showcase updated on GitHub!', 'success');
+}
+
+async function buGenerateAll() {
+  const base = buServerBase();
+  if (!base) { buToast('Start local server first', 'error'); return; }
+  try {
+    const r = await fetch(`${base}/api/generate-batch`, { method: 'POST' });
+    const data = await r.json();
+    if (data.job_id) {
+      buStartGenJob(data.job_id);
+    } else {
+      buToast(data.message || 'No products to generate', 'success');
+    }
+  } catch (e) { buToast('Error: ' + e.message, 'error'); }
 }
 
 function buSwitchTab(tab) {
@@ -2418,6 +2520,7 @@ async function buSavePrices() {
       buState = data.state;
       buPriceEdits = {};
       buToast(`Prices updated (${Object.keys(data.changes).length} changes)`, 'success');
+      if (data.job_id) buStartGenJob(data.job_id);
     } else { buToast(data.error || 'Update failed', 'error'); }
   } catch (e) { buToast('Save failed: ' + e.message, 'error'); }
 }
@@ -2477,6 +2580,7 @@ async function buSaveBrand() {
       buState = data.state;
       document.getElementById('buBusinessLabel').textContent = buState.display_name || buState.business_name;
       buToast('Brand identity saved', 'success');
+      if (data.job_id) buStartGenJob(data.job_id);
     } else { buToast(data.error || 'Failed', 'error'); }
   } catch (e) { buToast('Error: ' + e.message, 'error'); }
 }
@@ -2506,8 +2610,11 @@ async function buSaveOperations() {
       body: JSON.stringify({ business_id: buBusinessId(), category: 'operations', updates })
     });
     const data = await r.json();
-    if (data.success) { buState = data.state; buToast('Operations saved', 'success'); }
-    else { buToast(data.error || 'Failed', 'error'); }
+    if (data.success) {
+      buState = data.state;
+      buToast('Operations saved', 'success');
+      if (data.job_id) buStartGenJob(data.job_id);
+    } else { buToast(data.error || 'Failed', 'error'); }
   } catch (e) { buToast('Error: ' + e.message, 'error'); }
 }
 
@@ -2530,8 +2637,11 @@ async function buSaveContacts() {
       body: JSON.stringify({ business_id: buBusinessId(), category: 'contacts', updates })
     });
     const data = await r.json();
-    if (data.success) { buState = data.state; buToast('Contact details saved', 'success'); }
-    else { buToast(data.error || 'Failed', 'error'); }
+    if (data.success) {
+      buState = data.state;
+      buToast('Contact details saved', 'success');
+      if (data.job_id) buStartGenJob(data.job_id);
+    } else { buToast(data.error || 'Failed', 'error'); }
   } catch (e) { buToast('Error: ' + e.message, 'error'); }
 }
 

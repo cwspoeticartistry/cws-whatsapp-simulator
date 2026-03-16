@@ -20,6 +20,7 @@ import json
 import os
 import queue as _queue_mod
 import re
+import subprocess
 import sys
 import threading
 import traceback
@@ -40,7 +41,7 @@ SKILL_ROOT = Path(r"C:\Users\Dell\.claude\skills\social-image-prompter")
 SCRIPTS_DIR = SKILL_ROOT / "scripts"
 REFS_DIR = SKILL_ROOT / "references"
 PRODUCTS_DIR = PROJECT_ROOT / "products"
-GENERATED_DIR = PROJECT_ROOT / "generated"
+GENERATED_DIR = Path(__file__).parent / "generated"
 ENV_PATH = Path(r"C:\Users\Dell\Documents\Website Development\.env")
 CWS_SHARED = Path(r"C:\Users\Dell\.claude\skills\cws-shared")
 BUSINESS_STATE_DIR = CWS_SHARED / "state"
@@ -657,6 +658,123 @@ def poll_job(jid):
     return jsonify({"events": events})
 
 
+# ---------------------------------------------------------------------------
+# Showcase generation helpers
+# ---------------------------------------------------------------------------
+
+def _write_manifest():
+    """Scan GENERATED_DIR for PNGs, build/write generated/manifest.json keeping newest per slug."""
+    images = {}
+    if GENERATED_DIR.exists():
+        for f in sorted(GENERATED_DIR.glob("*.png"), key=lambda x: x.stat().st_mtime):
+            if "_social_" in f.stem:
+                slug = f.stem.split("_social_")[0]
+                images[slug] = f.name  # later mtime wins
+    manifest = {"generated_at": datetime.now().isoformat() + "Z", "images": images}
+    GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+    with open(GENERATED_DIR / "manifest.json", "w", encoding="utf-8") as mf:
+        json.dump(manifest, mf, indent=2)
+    print(f"  [Manifest] Written: {len(images)} products")
+    return manifest
+
+
+def _git_push_generated(jid, commit_msg):
+    """Git add generated/, commit, push origin main. Returns True on success."""
+    repo = Path(__file__).parent
+    try:
+        _emit(jid, "step", "Committing images to git...")
+        r = subprocess.run(["git", "add", "generated/"], cwd=repo, capture_output=True, text=True)
+        if r.returncode != 0:
+            _emit(jid, "step", f"git add warning: {r.stderr[:80]}")
+
+        r = subprocess.run(["git", "commit", "-m", commit_msg], cwd=repo, capture_output=True, text=True)
+        combined = (r.stdout + r.stderr).lower()
+        if r.returncode != 0:
+            if "nothing to commit" in combined:
+                _emit(jid, "step", "Nothing new to commit")
+                return True
+            _emit(jid, "step", f"git commit failed: {r.stderr[:80]}")
+            return False
+
+        _emit(jid, "step", "Committed. Pushing to GitHub...")
+        r = subprocess.run(["git", "push", "origin", "main"], cwd=repo, capture_output=True, text=True)
+        if r.returncode != 0:
+            _emit(jid, "step", f"Push failed: {r.stderr[:80]}")
+            return False
+        _emit(jid, "step", "Pushed to GitHub Pages")
+        return True
+    except Exception as e:
+        _emit(jid, "step", f"Git error: {str(e)[:80]}")
+        return False
+
+
+def _run_showcase_gen_job(jid, slugs_to_generate):
+    """Background thread — generates showcase images for the given slugs, then commits + pushes."""
+    try:
+        from generate_social_image import generate_social_image
+    except ImportError as e:
+        _emit(jid, "error", f"Cannot import generate_social_image: {e}")
+        return
+
+    total = len(slugs_to_generate)
+    generated = 0
+
+    for i, slug in enumerate(slugs_to_generate):
+        # Find product in catalogue by slug
+        product = None
+        for p in catalogue:
+            p_slug = re.sub(r"[^a-z0-9]+", "-", p["name"].lower()).strip("-")
+            if p_slug == slug:
+                product = p
+                break
+        if not product:
+            _emit(jid, "step", f"[{i+1}/{total}] Skipping {slug} — not in catalogue")
+            continue
+
+        name = product["name"]
+        _emit(jid, "step", f"[{i+1}/{total}] Generating {name}...")
+
+        # Find cache entry
+        cache_entry = None
+        for cs, ce in cache.items():
+            if ce.get("product_name", "").lower() == name.lower() or cs == slug:
+                cache_entry = ce
+                break
+
+        img_file = find_image_for_product(name)
+
+        # Delete old images for this slug to avoid duplicates in git
+        if GENERATED_DIR.exists():
+            for old in GENERATED_DIR.glob(f"{slug}_social_*.png"):
+                try:
+                    old.unlink()
+                except Exception:
+                    pass
+
+        image_prompt = assemble_prompt(product, cache_entry, None, None, img_file=img_file, scene_brief=None)
+
+        try:
+            result = generate_social_image(
+                prompt=image_prompt,
+                product_slug=slug,
+                output_dir=str(GENERATED_DIR),
+                product_image_files=[img_file] if img_file else None,
+                on_progress=lambda msg: _emit(jid, "step", msg),
+            )
+            if result.get("local_path"):
+                generated += 1
+                _emit(jid, "step", f"[{i+1}/{total}] {name} done")
+            else:
+                _emit(jid, "step", f"[{i+1}/{total}] {name} — generation may have failed")
+        except Exception as e:
+            _emit(jid, "step", f"[{i+1}/{total}] {name} error: {str(e)[:60]}")
+
+    _emit(jid, "step", "Writing manifest.json...")
+    _write_manifest()
+    _git_push_generated(jid, f"chore: update showcase images ({generated}/{total} generated)")
+    _emit(jid, "done", "Showcase updated", {"refreshed": generated})
+
+
 catalogue = load_catalogue()
 cache = load_cache()
 
@@ -1026,7 +1144,49 @@ def api_update_business():
         "confirmed_by": "owner",
     })
 
-    return jsonify({"success": True, "changes": changes, "state": state})
+    # Trigger showcase generation for brand/product/image_gen changes
+    job_id = None
+    if category in ("brand", "product", "image_gen") and changes:
+        existing_images = set()
+        if GENERATED_DIR.exists():
+            for f in GENERATED_DIR.glob("*.png"):
+                if "_social_" in f.stem:
+                    existing_images.add(f.stem.split("_social_")[0])
+        slugs_to_gen = [slug for slug in cache if slug not in existing_images]
+        if slugs_to_gen:
+            jid, _ = _new_job()
+            job_id = jid
+            threading.Thread(
+                target=_run_showcase_gen_job, args=(jid, slugs_to_gen), daemon=True
+            ).start()
+
+    response = {"success": True, "changes": changes, "state": state}
+    if job_id:
+        response["job_id"] = job_id
+    return jsonify(response)
+
+
+@app.route("/api/generate-batch", methods=["POST"])
+def api_generate_batch():
+    """Trigger generation for all cached products. Returns job_id immediately.
+    Query param: ?force=1 to regenerate even if images already exist."""
+    force = request.args.get("force", "0") == "1"
+    existing_images = set()
+    if not force and GENERATED_DIR.exists():
+        for f in GENERATED_DIR.glob("*.png"):
+            if "_social_" in f.stem:
+                existing_images.add(f.stem.split("_social_")[0])
+    slugs_to_gen = [slug for slug in cache if force or slug not in existing_images]
+    if not slugs_to_gen:
+        return jsonify({
+            "message": "All cached products already have images. Use ?force=1 to regenerate.",
+            "count": 0,
+        })
+    jid, _ = _new_job()
+    threading.Thread(
+        target=_run_showcase_gen_job, args=(jid, slugs_to_gen), daemon=True
+    ).start()
+    return jsonify({"job_id": jid, "count": len(slugs_to_gen), "slugs": slugs_to_gen})
 
 
 @app.route("/api/business/analyze-upload", methods=["POST"])
