@@ -217,12 +217,28 @@
   .msg-text { margin-bottom: 2px; white-space: pre-wrap; }
 
   .msg-image {
-    max-width: 100%;
-    max-height: 300px;
+    display: block;
+    width: 100%;
+    max-height: 320px;
     border-radius: 6px;
     margin-bottom: 4px;
     cursor: pointer;
-    object-fit: contain;
+    object-fit: cover;
+  }
+  /* When a bubble contains an image, cap width so image drives layout, not text */
+  .msg-with-image {
+    max-width: 65%;
+    padding: 4px 4px 6px;
+  }
+  .msg-with-image .msg-image {
+    border-radius: 6px 6px 4px 4px;
+    margin-bottom: 0;
+  }
+  .msg-with-image .msg-text {
+    padding: 4px 6px 0;
+  }
+  .msg-with-image .msg-time {
+    padding-right: 6px;
   }
 
   .msg-time {
@@ -1753,7 +1769,7 @@ function esc(text) {
 function addMessage(text, type, imageUrl, extraHtml) {
   const chatArea = document.getElementById('chatArea');
   const div = document.createElement('div');
-  div.className = 'msg msg-' + type;
+  div.className = 'msg msg-' + type + (imageUrl ? ' msg-with-image' : '');
 
   let html = '';
   if (imageUrl) {
@@ -1945,6 +1961,7 @@ function finalizeProgressBubble(uid, data, settings) {
     img.onerror = () => { img.alt = '[Image failed to load]'; img.style.opacity = '0.3'; };
     img.style.marginTop = '8px';
     msgText.appendChild(img);
+    bubble.classList.add('msg-with-image');
   }
 
   // Append reply text
