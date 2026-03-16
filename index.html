@@ -860,245 +860,185 @@
     border-radius: 4px;
   }
 
-  /* ===== BUSINESS UPDATER ===== */
-  .bu-page {
-    height: 100%;
-    display: none;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--bg);
-  }
-  .bu-page.active { display: flex; }
+  /* ===== BUSINESS UPDATER — PREMIUM ===== */
+  .bu-page { height:100%; display:none; flex-direction:column; overflow:hidden; background:#060912; color:#e2e8f0; }
+  .bu-page.active { display:flex; }
 
-  .bu-header {
-    background: #1f2c34;
-    padding: 8px 12px;
-    display: flex; align-items: center; gap: 10px;
-    min-height: 52px; flex-shrink: 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .bu-header-title { flex: 1; font-weight: 600; font-size: 15px; }
-  .bu-header-sub { font-size: 11px; color: var(--text-muted); }
-  .bu-upload-btn {
-    background: linear-gradient(135deg, #ea580c, #f59e0b);
-    border: none; color: white;
-    padding: 6px 12px; border-radius: 20px;
-    font-size: 12px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; gap: 5px;
-    white-space: nowrap;
-  }
-  .bu-upload-btn:active { opacity: 0.8; }
+  /* Header */
+  .bu-hdr { background:linear-gradient(135deg,#0c1525,#060912); padding:10px 14px; display:flex; align-items:center; gap:10px; min-height:54px; flex-shrink:0; border-bottom:1px solid rgba(59,130,246,0.12); position:relative; }
+  .bu-hdr::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,#3b82f6,transparent); }
+  .bu-hdr-main { flex:1; }
+  .bu-hdr-title { font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .bu-hdr-sub { font-size:11px; color:#64748b; margin-top:1px; }
+  .bu-live-dot { width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 6px #10b981; animation:buPulse 2s infinite; flex-shrink:0; }
+  @keyframes buPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .bu-back { background:none; border:none; color:#64748b; font-size:18px; padding:6px; cursor:pointer; border-radius:8px; transition:color .2s; line-height:1; }
+  .bu-back:hover { color:#e2e8f0; }
+  .bu-upload-btn { background:linear-gradient(135deg,#1d4ed8,#3b82f6); border:none; color:white; padding:7px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; box-shadow:0 2px 12px rgba(59,130,246,.3); transition:box-shadow .2s; display:flex; align-items:center; gap:5px; }
+  .bu-upload-btn:hover { box-shadow:0 4px 20px rgba(59,130,246,.5); }
+  .bu-upload-btn:active { opacity:.85; }
 
-  .bu-tabs {
-    display: flex; background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto; flex-shrink: 0;
-    scrollbar-width: none;
-  }
-  .bu-tabs::-webkit-scrollbar { display: none; }
-  .bu-tab {
-    padding: 10px 16px; font-size: 13px; font-weight: 500;
-    color: var(--text-muted); cursor: pointer;
-    border-bottom: 2px solid transparent;
-    white-space: nowrap; transition: all 0.2s;
-  }
-  .bu-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
-  .bu-tab:hover:not(.active) { color: var(--text); }
+  /* Tabs */
+  .bu-tabs { display:flex; background:#0c1525; border-bottom:1px solid rgba(59,130,246,.12); overflow-x:auto; flex-shrink:0; scrollbar-width:none; }
+  .bu-tabs::-webkit-scrollbar { display:none; }
+  .bu-tab { padding:11px 16px; font-size:12px; font-weight:600; color:#64748b; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; transition:all .2s; letter-spacing:.3px; }
+  .bu-tab.active { color:#60a5fa; border-bottom-color:#3b82f6; }
+  .bu-tab:hover:not(.active) { color:#e2e8f0; }
 
-  .bu-content { flex: 1; overflow-y: auto; padding: 16px; }
+  /* Panels */
+  .bu-panel { flex:1; overflow-y:auto; }
+  .bu-panel::-webkit-scrollbar { width:3px; }
+  .bu-panel::-webkit-scrollbar-thumb { background:rgba(59,130,246,.2); border-radius:3px; }
 
-  .bu-section { margin-bottom: 24px; }
-  .bu-section-title {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.8px; color: var(--gold-dim);
-    margin-bottom: 12px; padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
-  }
+  /* Canvas Hero */
+  .bu-cv-hero { position:relative; padding:28px 20px 22px; overflow:hidden; background:linear-gradient(135deg,#060912 0%,#0a1528 60%,#0d1f3a 100%); border-bottom:1px solid rgba(59,130,246,.12); }
+  .bu-cv-grid { position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(rgba(59,130,246,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.04) 1px,transparent 1px); background-size:32px 32px; }
+  .bu-cv-glow { position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,rgba(59,130,246,.18),transparent 70%); pointer-events:none; }
+  .bu-cv-eyebrow { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#3b82f6; margin-bottom:5px; opacity:.9; }
+  .bu-cv-name { font-size:38px; font-weight:900; letter-spacing:4px; background:linear-gradient(135deg,#f59e0b,#fcd34d,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1; margin-bottom:6px; transition:all .3s; }
+  .bu-cv-tagline { font-size:13px; color:#64748b; letter-spacing:.5px; transition:all .3s; margin-bottom:14px; }
+  .bu-cv-chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .bu-chip { background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.25); border-radius:20px; padding:4px 10px; font-size:10px; color:#60a5fa; font-weight:600; }
 
-  .bu-field { margin-bottom: 14px; }
-  .bu-label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; font-weight: 500; }
-  .bu-input, .bu-textarea, .bu-select {
-    width: 100%; background: var(--surface2);
-    border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); padding: 9px 12px;
-    font-size: 13px; font-family: inherit;
-    transition: border-color 0.2s;
-  }
-  .bu-input:focus, .bu-textarea:focus, .bu-select:focus { outline: none; border-color: var(--gold-dim); }
-  .bu-textarea { resize: vertical; min-height: 70px; }
-  .bu-select option { background: var(--surface2); }
+  /* Canvas Sections */
+  .bu-cv-section { padding:18px 16px 0; }
+  .bu-cv-label { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#64748b; margin-bottom:12px; }
 
-  .bu-color-row { display: flex; gap: 8px; align-items: center; }
-  .bu-color-swatch {
-    width: 36px; height: 36px; border-radius: 8px;
-    border: 2px solid var(--border); cursor: pointer; flex-shrink: 0;
-    padding: 0;
-  }
-  .bu-color-input { flex: 1; }
+  /* Color Palette */
+  .bu-palette-strip { display:flex; border-radius:12px; overflow:hidden; height:54px; margin-bottom:10px; gap:2px; }
+  .bu-palette-slab { flex:1; display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px; cursor:pointer; transition:flex .3s; }
+  .bu-palette-slab:hover { flex:1.6; }
+  .bu-palette-slab-label { font-size:9px; font-weight:700; color:rgba(255,255,255,.75); text-shadow:0 1px 3px rgba(0,0,0,.9); }
+  .bu-color-chips { display:flex; gap:8px; }
+  .bu-color-chip { flex:1; background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:10px; padding:10px 10px 8px; cursor:pointer; transition:border-color .2s; }
+  .bu-color-chip:hover { border-color:rgba(59,130,246,.3); }
+  .bu-chip-dot { width:32px; height:32px; border-radius:8px; margin-bottom:6px; box-shadow:0 2px 8px rgba(0,0,0,.4); }
+  .bu-chip-name { font-size:10px; color:#64748b; margin-bottom:2px; }
+  .bu-chip-hex { font-size:11px; font-weight:700; color:#e2e8f0; font-family:monospace; }
 
-  .bu-checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .bu-checkbox-item {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 12px;
-  }
-  .bu-checkbox-item input[type=checkbox] { accent-color: var(--gold); }
+  /* Typography Card */
+  .bu-type-card { background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:12px; padding:16px; position:relative; overflow:hidden; }
+  .bu-type-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,#f59e0b,#fbbf24,#f59e0b); }
+  .bu-type-heading { font-size:24px; font-weight:900; letter-spacing:3px; background:linear-gradient(135deg,#f59e0b,#fcd34d); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:4px; }
+  .bu-type-product { font-size:13px; font-weight:700; color:#e2e8f0; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+  .bu-type-body { font-size:11px; color:#64748b; line-height:1.6; }
 
-  .bu-save-btn {
-    width: 100%; padding: 12px;
-    background: linear-gradient(135deg, #ea580c, #f59e0b);
-    border: none; border-radius: 10px;
-    color: white; font-size: 14px; font-weight: 700;
-    cursor: pointer; margin-top: 8px; transition: opacity 0.2s;
-  }
-  .bu-save-btn:hover { opacity: 0.9; }
-  .bu-save-btn:active { opacity: 0.7; }
-  .bu-save-btn:disabled { opacity: 0.4; cursor: default; }
+  /* Info 2-col */
+  .bu-info-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .bu-info-card { background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:12px; padding:14px; }
+  .bu-info-label { font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#3b82f6; margin-bottom:7px; }
+  .bu-info-text { font-size:12px; color:#e2e8f0; line-height:1.6; font-style:italic; }
 
-  .bu-product-item {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px; margin-bottom: 10px;
-  }
-  .bu-product-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-  .bu-product-name { font-size: 13px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bu-price-input {
-    width: 72px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 6px;
-    color: var(--text); padding: 5px 8px; font-size: 13px; text-align: center;
-  }
-  .bu-price-prefix { font-size: 13px; color: var(--gold); font-weight: 700; }
-  .bu-product-slug { font-size: 10px; color: var(--text-muted); font-family: monospace; }
-  .bu-product-pkg { font-size: 10px; background: var(--border); border-radius: 4px; padding: 2px 6px; color: var(--text-muted); }
-  .bu-product-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  /* Product Showcase Scroll */
+  .bu-showcase-row { display:flex; gap:10px; overflow-x:auto; padding:2px 16px 8px; scrollbar-width:none; }
+  .bu-showcase-row::-webkit-scrollbar { display:none; }
+  .bu-sc-card { flex-shrink:0; width:128px; border-radius:14px; overflow:hidden; cursor:pointer; border:1px solid rgba(59,130,246,.12); transition:transform .2s, box-shadow .2s; }
+  .bu-sc-card:hover { transform:translateY(-4px); box-shadow:0 10px 28px rgba(0,0,0,.5); }
+  .bu-sc-scene { height:170px; position:relative; display:flex; align-items:flex-end; }
+  .bu-sc-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .bu-sc-fade { position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,.75) 0%,transparent 55%); }
+  .bu-sc-badge { position:absolute; top:7px; left:7px; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); border-radius:5px; padding:2px 6px; font-size:9px; color:rgba(255,255,255,.8); font-weight:600; }
+  .bu-sc-gen-badge { position:absolute; top:7px; right:7px; background:rgba(16,185,129,.2); backdrop-filter:blur(4px); border:1px solid rgba(16,185,129,.4); border-radius:5px; padding:2px 6px; font-size:9px; color:#34d399; font-weight:600; }
+  .bu-sc-body { background:#0f1c30; padding:8px 10px; }
+  .bu-sc-name { font-size:11px; font-weight:700; color:#e2e8f0; line-height:1.3; margin-bottom:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .bu-sc-scene-label { font-size:9px; color:#60a5fa; font-weight:600; margin-bottom:1px; }
+  .bu-sc-person { font-size:9px; color:#64748b; }
 
-  .bu-add-product-form {
-    background: var(--surface); border: 1px dashed var(--border);
-    border-radius: 10px; padding: 14px; margin-top: 12px;
-  }
+  /* Forms */
+  .bu-form { padding:16px; }
+  .bu-divider { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#3b82f6; margin-bottom:12px; margin-top:20px; display:flex; align-items:center; gap:10px; }
+  .bu-divider:first-child { margin-top:4px; }
+  .bu-divider::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(59,130,246,.3),transparent); }
+  .bu-fg { margin-bottom:14px; }
+  .bu-lbl { display:block; font-size:11px; font-weight:600; color:#64748b; margin-bottom:6px; letter-spacing:.4px; text-transform:uppercase; }
+  .bu-inp, .bu-ta, .bu-sel { width:100%; background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:10px; color:#e2e8f0; padding:10px 14px; font-size:13px; font-family:inherit; transition:border-color .2s, box-shadow .2s; }
+  .bu-inp:focus, .bu-ta:focus, .bu-sel:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+  .bu-ta { resize:vertical; min-height:72px; }
+  .bu-sel option { background:#0f1c30; }
+  .bu-color-row { display:flex; gap:8px; align-items:center; }
+  .bu-color-sw { width:38px; height:38px; border-radius:10px; border:2px solid rgba(59,130,246,.2); cursor:pointer; flex-shrink:0; padding:0; transition:border-color .2s; }
+  .bu-color-sw:hover { border-color:rgba(59,130,246,.5); }
+  .bu-btn { width:100%; padding:13px; background:linear-gradient(135deg,#1d4ed8,#3b82f6); border:none; border-radius:12px; color:white; font-size:14px; font-weight:700; cursor:pointer; margin-top:8px; box-shadow:0 4px 16px rgba(59,130,246,.25); transition:box-shadow .2s, opacity .2s; letter-spacing:.3px; }
+  .bu-btn:hover { box-shadow:0 6px 24px rgba(59,130,246,.4); }
+  .bu-btn:active { opacity:.85; }
+  .bu-btn:disabled { opacity:.35; cursor:default; box-shadow:none; }
+  .bu-btn-green { background:linear-gradient(135deg,#059669,#10b981); box-shadow:0 4px 16px rgba(16,185,129,.2); }
+  .bu-btn-green:hover { box-shadow:0 6px 24px rgba(16,185,129,.35); }
 
-  .bu-promo-item {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px; margin-bottom: 10px;
-  }
-  .bu-promo-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .bu-promo-name { font-size: 13px; font-weight: 600; flex: 1; }
-  .bu-promo-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; text-transform: uppercase; }
-  .bu-promo-badge.active { background: rgba(37,211,102,0.2); color: var(--accent); }
-  .bu-promo-badge.expired { background: rgba(239,68,68,0.2); color: var(--danger); }
-  .bu-promo-detail { font-size: 11px; color: var(--text-muted); line-height: 1.9; }
-  .bu-promo-expire-btn {
-    font-size: 11px; color: var(--danger); background: none;
-    border: 1px solid var(--danger); border-radius: 6px;
-    padding: 3px 8px; cursor: pointer; margin-top: 6px;
-  }
+  /* Product list items */
+  .bu-prod-item { background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:12px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+  .bu-prod-info { flex:1; min-width:0; }
+  .bu-prod-name { font-size:13px; font-weight:600; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bu-prod-meta { display:flex; gap:5px; flex-wrap:wrap; }
+  .bu-tag { background:#14243d; border-radius:4px; padding:1px 6px; font-size:9px; color:#64748b; }
+  .bu-tag-blue { background:rgba(59,130,246,.1); color:#60a5fa; }
+  .bu-tag-green { background:rgba(16,185,129,.1); color:#34d399; }
+  .bu-price-wrap { display:flex; align-items:center; gap:3px; background:#14243d; border:1px solid rgba(59,130,246,.12); border-radius:8px; padding:5px 8px; }
+  .bu-price-prefix { font-size:12px; color:#f59e0b; font-weight:700; }
+  .bu-price-wrap input { width:58px; background:none; border:none; color:#e2e8f0; font-size:13px; text-align:right; padding:0; }
+  .bu-price-wrap input:focus { outline:none; }
 
-  .bu-preview-card {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 12px; padding: 14px; margin-bottom: 14px;
-  }
-  .bu-preview-card-title {
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 10px;
-  }
-  .bu-preview-row {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
-    font-size: 12px; gap: 8px;
-  }
-  .bu-preview-row:last-child { border-bottom: none; }
-  .bu-preview-key { color: var(--text-muted); flex-shrink: 0; min-width: 110px; }
-  .bu-preview-val { color: var(--text); text-align: right; word-break: break-word; }
-  .bu-color-dot {
-    display: inline-block; width: 12px; height: 12px;
-    border-radius: 3px; margin-right: 4px; vertical-align: middle;
-    border: 1px solid rgba(255,255,255,0.2);
-  }
-  .bu-brand-badge {
-    display: inline-block; background: var(--gold); color: #1a1a1a;
-    font-weight: 800; font-size: 20px; padding: 8px 20px;
-    border-radius: 8px; margin-bottom: 12px; letter-spacing: 1px;
-  }
+  /* Promo cards */
+  .bu-promo-card { background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:12px; padding:14px; margin-bottom:10px; position:relative; overflow:hidden; }
+  .bu-promo-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+  .bu-promo-hdr { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .bu-promo-name { font-size:14px; font-weight:700; flex:1; }
+  .bu-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:700; text-transform:uppercase; }
+  .bu-badge-green { background:rgba(16,185,129,.15); color:#34d399; border:1px solid rgba(16,185,129,.3); }
+  .bu-badge-red { background:rgba(239,68,68,.12); color:#ef4444; border:1px solid rgba(239,68,68,.25); }
+  .bu-promo-detail { font-size:11px; color:#64748b; line-height:1.9; }
+  .bu-promo-expire { font-size:11px; color:#ef4444; background:none; border:1px solid #ef4444; border-radius:6px; padding:3px 8px; cursor:pointer; margin-top:6px; transition:background .2s; }
+  .bu-promo-expire:hover { background:rgba(239,68,68,.1); }
 
-  .bu-op-log-item {
-    background: var(--surface2); border-left: 3px solid var(--gold-dim);
-    border-radius: 0 8px 8px 0; padding: 8px 10px;
-    margin-bottom: 8px; font-size: 11px;
-  }
-  .bu-op-log-time { color: var(--text-muted); margin-bottom: 2px; }
-  .bu-op-log-desc { color: var(--text); }
+  /* Checkbox options */
+  .bu-check-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .bu-check-opt { display:flex; align-items:center; gap:8px; background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:10px; padding:10px 12px; cursor:pointer; font-size:12px; transition:border-color .2s; }
+  .bu-check-opt:hover { border-color:rgba(59,130,246,.3); }
+  .bu-check-opt input[type=checkbox] { accent-color:#3b82f6; }
 
-  .bu-empty-state { text-align: center; color: var(--text-muted); padding: 30px 16px; font-size: 13px; }
-  .bu-empty-icon { font-size: 32px; margin-bottom: 8px; }
+  /* Preview */
+  .bu-prev-hero { text-align:center; padding:22px 16px 16px; border-bottom:1px solid rgba(59,130,246,.1); }
+  .bu-prev-badge { display:inline-block; background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#1a0a00; font-weight:900; font-size:22px; padding:8px 24px; border-radius:10px; letter-spacing:2px; margin-bottom:8px; box-shadow:0 4px 20px rgba(245,158,11,.3); }
+  .bu-prev-section { padding:16px; }
+  .bu-prev-card { background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:12px; padding:14px; margin-bottom:12px; }
+  .bu-prev-title { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#3b82f6; margin-bottom:10px; }
+  .bu-prev-row { display:flex; justify-content:space-between; align-items:flex-start; padding:6px 0; border-bottom:1px solid rgba(59,130,246,.06); font-size:12px; gap:8px; }
+  .bu-prev-row:last-child { border-bottom:none; }
+  .bu-prev-key { color:#64748b; flex-shrink:0; min-width:110px; }
+  .bu-prev-val { color:#e2e8f0; text-align:right; word-break:break-word; }
+  .bu-cdot { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:4px; vertical-align:middle; border:1px solid rgba(255,255,255,.15); }
+  .bu-log-item { border-left:2px solid #3b82f6; padding:8px 12px; margin-bottom:8px; background:#0f1c30; border-radius:0 8px 8px 0; font-size:11px; }
+  .bu-log-time { color:#64748b; margin-bottom:2px; }
+  .bu-log-desc { color:#e2e8f0; }
 
-  .bu-toast {
-    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 20px; padding: 8px 18px;
-    font-size: 13px; color: var(--text);
-    opacity: 0; pointer-events: none;
-    transition: all 0.3s; z-index: 9999; white-space: nowrap;
-  }
-  .bu-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .bu-toast.success { border-color: var(--accent); color: var(--accent); }
-  .bu-toast.error { border-color: var(--danger); color: var(--danger); }
-
-  .bu-upload-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-    z-index: 1000; display: none; align-items: flex-end;
-  }
-  .bu-upload-overlay.open { display: flex; }
-  .bu-upload-sheet {
-    background: var(--surface); border-radius: 20px 20px 0 0;
-    padding: 20px 16px 36px; width: 100%;
-    max-height: 85vh; overflow-y: auto;
-  }
-  .bu-upload-sheet-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-  .bu-upload-sheet-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
-  .bu-upload-drop {
-    border: 2px dashed var(--border); border-radius: 12px;
-    padding: 30px; text-align: center; cursor: pointer;
-    transition: border-color 0.2s; margin-bottom: 14px;
-  }
-  .bu-upload-drop:hover, .bu-upload-drop.dragging { border-color: var(--gold-dim); }
-  .bu-upload-drop-icon { font-size: 36px; margin-bottom: 8px; }
-  .bu-upload-drop-text { font-size: 13px; color: var(--text-muted); }
-  .bu-upload-drop-text strong { color: var(--text); }
-
-  .bu-extracted-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--accent); }
-  .bu-extracted-item {
-    display: flex; align-items: flex-start; gap: 10px;
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px; margin-bottom: 8px;
-  }
-  .bu-extracted-item input[type=checkbox] { accent-color: var(--gold); margin-top: 3px; flex-shrink: 0; }
-  .bu-extracted-key { font-size: 11px; color: var(--text-muted); }
-  .bu-extracted-val { font-size: 13px; color: var(--text); }
-  .bu-apply-btn {
-    width: 100%; padding: 12px;
-    background: linear-gradient(135deg, #059669, #34d399);
-    border: none; border-radius: 10px;
-    color: white; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px;
-  }
-  .bu-close-sheet-btn {
-    width: 100%; padding: 10px; background: transparent;
-    border: 1px solid var(--border); border-radius: 10px;
-    color: var(--text-muted); font-size: 13px; cursor: pointer; margin-top: 8px;
-  }
-  .bu-spinner {
-    display: inline-block; width: 16px; height: 16px;
-    border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
-    border-radius: 50%; animation: buSpin 0.7s linear infinite; vertical-align: middle;
-  }
-  @keyframes buSpin { to { transform: rotate(360deg); } }
-  .bu-analyzing-bar {
-    text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;
-  }
-  .bu-refresh-btn {
-    background: none; border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text-muted); font-size: 11px; padding: 4px 10px;
-    cursor: pointer; float: right; margin-top: -2px;
-  }
-  .bu-refresh-btn:hover { border-color: var(--gold-dim); color: var(--gold-dim); }
+  /* Empty / Toast / Upload sheet */
+  .bu-empty { text-align:center; color:#64748b; padding:32px 16px; font-size:13px; }
+  .bu-empty-icon { font-size:32px; margin-bottom:10px; }
+  .bu-toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px); background:#0f1c30; border:1px solid rgba(59,130,246,.2); border-radius:24px; padding:9px 20px; font-size:13px; color:#e2e8f0; opacity:0; pointer-events:none; transition:all .3s; z-index:9999; white-space:nowrap; backdrop-filter:blur(10px); }
+  .bu-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .bu-toast.success { border-color:#10b981; color:#34d399; }
+  .bu-toast.error { border-color:#ef4444; color:#ef4444; }
+  .bu-sheet-overlay { position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:1000; display:none; align-items:flex-end; backdrop-filter:blur(5px); }
+  .bu-sheet-overlay.open { display:flex; }
+  .bu-sheet { background:#0c1525; border-radius:24px 24px 0 0; padding:12px 16px 36px; width:100%; max-height:88vh; overflow-y:auto; border-top:1px solid rgba(59,130,246,.3); }
+  .bu-sheet-handle { width:36px; height:4px; border-radius:2px; background:rgba(59,130,246,.3); margin:0 auto 16px; }
+  .bu-sheet-title { font-size:16px; font-weight:700; margin-bottom:4px; }
+  .bu-sheet-sub { font-size:12px; color:#64748b; margin-bottom:18px; }
+  .bu-drop { border:2px dashed rgba(59,130,246,.25); border-radius:14px; padding:32px 20px; text-align:center; cursor:pointer; transition:all .2s; margin-bottom:14px; background:rgba(59,130,246,.05); }
+  .bu-drop:hover, .bu-drop.drag { border-color:#3b82f6; background:rgba(59,130,246,.1); }
+  .bu-drop-icon { font-size:36px; margin-bottom:8px; }
+  .bu-drop-text { font-size:13px; color:#64748b; }
+  .bu-drop-text strong { color:#e2e8f0; }
+  .bu-ext-title { font-size:13px; font-weight:600; margin-bottom:10px; color:#10b981; }
+  .bu-ext-item { display:flex; align-items:flex-start; gap:10px; background:#0f1c30; border:1px solid rgba(59,130,246,.12); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+  .bu-ext-item input[type=checkbox] { accent-color:#3b82f6; margin-top:3px; flex-shrink:0; }
+  .bu-ext-key { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+  .bu-ext-val { font-size:13px; color:#e2e8f0; }
+  .bu-spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.2); border-top-color:white; border-radius:50%; animation:buSpin .7s linear infinite; vertical-align:middle; }
+  @keyframes buSpin { to{transform:rotate(360deg)} }
+  .bu-analyzing { text-align:center; padding:24px; color:#64748b; font-size:13px; }
+  .bu-refresh-btn { background:none; border:1px solid rgba(59,130,246,.2); border-radius:8px; color:#64748b; font-size:10px; padding:3px 10px; cursor:pointer; float:right; transition:all .2s; }
+  .bu-refresh-btn:hover { border-color:rgba(59,130,246,.5); color:#60a5fa; }
 </style>
 </head>
 <body>
@@ -1248,308 +1188,254 @@
 <input type="file" id="buFileInput" accept="image/*,application/pdf,.txt,.md,.csv" onchange="buHandleFileSelect(event)" style="display:none">
 
 <!-- ===== BUSINESS UPDATER PAGE ===== -->
-<div class="bu-page" id="simBusinessUpdater">
+<div class="bu-page" id="simBusinessUpdater" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
 
   <!-- Header -->
-  <div class="bu-header">
-    <button class="header-back" onclick="goHome()">&#x2190;</button>
-    <div>
-      <div class="bu-header-title">&#x2699; Business Updater</div>
-      <div class="bu-header-sub" id="buBusinessLabel">Dr Gee</div>
+  <div class="bu-hdr">
+    <button class="bu-back" onclick="goHome()">&#x2190;</button>
+    <div class="bu-hdr-main">
+      <div class="bu-hdr-title">Business Updater <span class="bu-live-dot" id="buLiveDot" style="display:none"></span></div>
+      <div class="bu-hdr-sub" id="buBusinessLabel">Dr Gee &mdash; Herbal Wellness</div>
     </div>
-    <button class="bu-upload-btn" onclick="openBrandUpload()">
-      &#x1F4E4; Upload Brand Info
-    </button>
+    <button class="bu-upload-btn" onclick="openBrandUpload()">&#x2B06; Upload</button>
   </div>
 
   <!-- Tabs -->
   <div class="bu-tabs">
-    <div class="bu-tab active" onclick="buSwitchTab('brand')" id="buTab-brand">Brand</div>
+    <div class="bu-tab active" onclick="buSwitchTab('canvas')" id="buTab-canvas">&#x1F3A8; Brand Canvas</div>
+    <div class="bu-tab" onclick="buSwitchTab('identity')" id="buTab-identity">Identity</div>
     <div class="bu-tab" onclick="buSwitchTab('products')" id="buTab-products">Products</div>
-    <div class="bu-tab" onclick="buSwitchTab('promotions')" id="buTab-promotions">Promotions</div>
-    <div class="bu-tab" onclick="buSwitchTab('operations')" id="buTab-operations">Operations</div>
+    <div class="bu-tab" onclick="buSwitchTab('promotions')" id="buTab-promotions">Promos</div>
+    <div class="bu-tab" onclick="buSwitchTab('operations')" id="buTab-operations">Ops</div>
     <div class="bu-tab" onclick="buSwitchTab('contacts')" id="buTab-contacts">Contacts</div>
-    <div class="bu-tab" onclick="buSwitchTab('preview')" id="buTab-preview">&#x1F441; Preview</div>
+    <div class="bu-tab" onclick="buSwitchTab('preview')" id="buTab-preview">Preview</div>
   </div>
 
-  <!-- ── TAB: BRAND ── -->
-  <div class="bu-content" id="buPanel-brand">
-    <div class="bu-section">
-      <div class="bu-section-title">Brand Identity</div>
-      <div class="bu-field">
-        <label class="bu-label">Display Name (overlays &amp; conversations)</label>
-        <input class="bu-input" id="bu-displayName" type="text" placeholder="Dr Gee">
-      </div>
-      <div class="bu-field">
-        <label class="bu-label">Label Text (as printed on product labels)</label>
-        <input class="bu-input" id="bu-labelText" type="text" placeholder="DR GEE">
-      </div>
-      <div class="bu-field">
-        <label class="bu-label">Tone of Voice</label>
-        <textarea class="bu-textarea" id="bu-toneOfVoice" placeholder="Premium, authoritative, wellness-focused..."></textarea>
-      </div>
-      <div class="bu-field">
-        <label class="bu-label">Target Market</label>
-        <input class="bu-input" id="bu-targetMarket" type="text" placeholder="Health-conscious South African adults 25-55">
-      </div>
-      <div class="bu-field">
-        <label class="bu-label">Brand Story</label>
-        <textarea class="bu-textarea" id="bu-brandStory" placeholder="Formulated by Dr Gee since 1992..."></textarea>
+  <!-- ── BRAND CANVAS ── -->
+  <div class="bu-panel" id="buPanel-canvas">
+    <div class="bu-cv-hero">
+      <div class="bu-cv-grid"></div>
+      <div class="bu-cv-glow"></div>
+      <div class="bu-cv-eyebrow">Brand Identity</div>
+      <div class="bu-cv-name" id="cvBrandName">DR GEE</div>
+      <div class="bu-cv-tagline" id="cvTagline">South African Herbal Wellness &mdash; Est. 1992</div>
+      <div class="bu-cv-chips">
+        <span class="bu-chip" id="cvChipProducts">44 Products</span>
+        <span class="bu-chip">Nano-Banana-2 &middot; 3:4 2K</span>
+        <span class="bu-chip" id="cvChipPromo" style="display:none">&#x1F3F7; Active Promo</span>
       </div>
     </div>
 
-    <div class="bu-section">
-      <div class="bu-section-title">Brand Colors</div>
-      <div class="bu-field">
-        <label class="bu-label">Primary Color</label>
-        <div class="bu-color-row">
-          <input type="color" class="bu-color-swatch" id="bu-colorPrimaryPicker" oninput="document.getElementById('bu-colorPrimary').value=this.value">
-          <input class="bu-input bu-color-input" id="bu-colorPrimary" type="text" placeholder="#1a3a3a" oninput="document.getElementById('bu-colorPrimaryPicker').value=this.value">
-        </div>
+    <div class="bu-cv-section" style="margin-top:18px">
+      <div class="bu-cv-label">Brand Colors &mdash; tap to copy hex</div>
+      <div class="bu-palette-strip" id="cvPaletteStrip">
+        <div class="bu-palette-slab" id="cvSlab1" style="background:#1a3a3a" onclick="buCopyColor('#1a3a3a')"><span class="bu-palette-slab-label">Primary</span></div>
+        <div class="bu-palette-slab" id="cvSlab2" style="background:#2d2d2d" onclick="buCopyColor('#2d2d2d')"><span class="bu-palette-slab-label">Secondary</span></div>
+        <div class="bu-palette-slab" id="cvSlab3" style="background:#c9a84c" onclick="buCopyColor('#c9a84c')"><span class="bu-palette-slab-label">Accent</span></div>
       </div>
-      <div class="bu-field">
-        <label class="bu-label">Secondary Color</label>
-        <div class="bu-color-row">
-          <input type="color" class="bu-color-swatch" id="bu-colorSecondaryPicker" oninput="document.getElementById('bu-colorSecondary').value=this.value">
-          <input class="bu-input bu-color-input" id="bu-colorSecondary" type="text" placeholder="#2d2d2d" oninput="document.getElementById('bu-colorSecondaryPicker').value=this.value">
+      <div class="bu-color-chips">
+        <div class="bu-color-chip" onclick="buCopyColor(document.getElementById('cvHex1').textContent)">
+          <div class="bu-chip-dot" id="cvDot1" style="background:#1a3a3a"></div>
+          <div class="bu-chip-name">Primary</div>
+          <div class="bu-chip-hex" id="cvHex1">#1a3a3a</div>
         </div>
-      </div>
-      <div class="bu-field">
-        <label class="bu-label">Accent / Gold Color</label>
-        <div class="bu-color-row">
-          <input type="color" class="bu-color-swatch" id="bu-colorAccentPicker" oninput="document.getElementById('bu-colorAccent').value=this.value">
-          <input class="bu-input bu-color-input" id="bu-colorAccent" type="text" placeholder="#c9a84c" oninput="document.getElementById('bu-colorAccentPicker').value=this.value">
+        <div class="bu-color-chip" onclick="buCopyColor(document.getElementById('cvHex2').textContent)">
+          <div class="bu-chip-dot" id="cvDot2" style="background:#2d2d2d"></div>
+          <div class="bu-chip-name">Secondary</div>
+          <div class="bu-chip-hex" id="cvHex2">#2d2d2d</div>
+        </div>
+        <div class="bu-color-chip" onclick="buCopyColor(document.getElementById('cvHex3').textContent)">
+          <div class="bu-chip-dot" id="cvDot3" style="background:#c9a84c"></div>
+          <div class="bu-chip-name">Accent Gold</div>
+          <div class="bu-chip-hex" id="cvHex3">#c9a84c</div>
         </div>
       </div>
     </div>
 
-    <div class="bu-section">
-      <div class="bu-section-title">Image Generation Style</div>
-      <div class="bu-field">
-        <label class="bu-label">Default Style Recipe</label>
-        <textarea class="bu-textarea" id="bu-defaultStyle" style="min-height:90px" placeholder="Describe the default visual aesthetic for generated product images..."></textarea>
+    <div class="bu-cv-section" style="margin-top:16px">
+      <div class="bu-cv-label">Typography &amp; Label Style</div>
+      <div class="bu-type-card">
+        <div class="bu-type-heading" id="cvTypeHeading">DR GEE</div>
+        <div class="bu-type-product" id="cvTypeProduct">Herbal Vitality Blend &mdash; Blood Purification</div>
+        <div class="bu-type-body" id="cvTypeBody">Premium herbal formulation for daily wellness. South African tradition since 1992. 60 Capsules &middot; R350</div>
       </div>
     </div>
 
-    <button class="bu-save-btn" onclick="buSaveBrand()">Save Brand Identity</button>
+    <div class="bu-cv-section" style="margin-top:16px">
+      <div class="bu-info-row">
+        <div class="bu-info-card">
+          <div class="bu-info-label">Voice &amp; Tone</div>
+          <div class="bu-info-text" id="cvTone">Premium, authoritative, wellness-focused</div>
+        </div>
+        <div class="bu-info-card">
+          <div class="bu-info-label">Target Market</div>
+          <div class="bu-info-text" id="cvMarket">Health-conscious South African adults 25&ndash;55</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bu-cv-section" style="margin-top:20px; padding-bottom:0">
+      <div class="bu-cv-label">Product Showcase &mdash; Natural Scenes &middot; Black SA Lifestyle</div>
+    </div>
+    <div class="bu-showcase-row" id="cvShowcase">
+      <div class="bu-empty" style="min-width:100%;padding:16px 0"><span class="bu-spinner"></span></div>
+    </div>
+    <div style="height:28px"></div>
   </div>
 
-  <!-- ── TAB: PRODUCTS ── -->
-  <div class="bu-content" id="buPanel-products" style="display:none">
-    <div class="bu-section">
-      <div class="bu-section-title">Product Prices
-        <button class="bu-refresh-btn" onclick="buLoadProducts()">&#x21BB; Refresh</button>
+  <!-- ── IDENTITY ── -->
+  <div class="bu-panel" id="buPanel-identity" style="display:none">
+    <div class="bu-form">
+      <div class="bu-divider">Brand Identity</div>
+      <div class="bu-fg"><label class="bu-lbl">Display Name</label><input class="bu-inp" id="bu-displayName" type="text" placeholder="Dr Gee" oninput="buLiveUpdate()"></div>
+      <div class="bu-fg"><label class="bu-lbl">Label Text (on packaging)</label><input class="bu-inp" id="bu-labelText" type="text" placeholder="DR GEE" oninput="buLiveUpdate()"></div>
+      <div class="bu-fg"><label class="bu-lbl">Tone of Voice</label><textarea class="bu-ta" id="bu-toneOfVoice" placeholder="Premium, authoritative, wellness-focused..." oninput="buLiveUpdate()"></textarea></div>
+      <div class="bu-fg"><label class="bu-lbl">Target Market</label><input class="bu-inp" id="bu-targetMarket" type="text" placeholder="Health-conscious South African adults 25-55" oninput="buLiveUpdate()"></div>
+      <div class="bu-fg"><label class="bu-lbl">Brand Story</label><textarea class="bu-ta" id="bu-brandStory" placeholder="Formulated by Dr Gee since 1992..."></textarea></div>
+      <div class="bu-divider">Brand Colors</div>
+      <div class="bu-fg"><label class="bu-lbl">Primary Color</label>
+        <div class="bu-color-row"><input type="color" class="bu-color-sw" id="bu-colorPrimaryPicker" oninput="document.getElementById('bu-colorPrimary').value=this.value;buLiveUpdate()"><input class="bu-inp" id="bu-colorPrimary" type="text" placeholder="#1a3a3a" oninput="if(/^#[0-9a-f]{6}$/i.test(this.value))document.getElementById('bu-colorPrimaryPicker').value=this.value;buLiveUpdate()"></div>
       </div>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Edit prices inline. Changes apply to the catalogue and image generation.</p>
-      <div id="buProductList">
-        <div class="bu-empty-state"><div class="bu-empty-icon">&#x23F3;</div>Loading products...</div>
+      <div class="bu-fg"><label class="bu-lbl">Secondary Color</label>
+        <div class="bu-color-row"><input type="color" class="bu-color-sw" id="bu-colorSecondaryPicker" oninput="document.getElementById('bu-colorSecondary').value=this.value;buLiveUpdate()"><input class="bu-inp" id="bu-colorSecondary" type="text" placeholder="#2d2d2d" oninput="if(/^#[0-9a-f]{6}$/i.test(this.value))document.getElementById('bu-colorSecondaryPicker').value=this.value;buLiveUpdate()"></div>
       </div>
-    </div>
-
-    <div class="bu-section">
-      <div class="bu-section-title">Add New Product</div>
-      <div class="bu-add-product-form">
-        <div class="bu-field">
-          <label class="bu-label">Product Name (exact)</label>
-          <input class="bu-input" id="bu-newProductName" type="text" placeholder="Herbal Vitality Blend">
-        </div>
-        <div class="bu-field">
-          <label class="bu-label">Price (ZAR, no R prefix)</label>
-          <input class="bu-input" id="bu-newProductPrice" type="number" placeholder="350" min="0">
-        </div>
-        <div class="bu-field">
-          <label class="bu-label">Short Description</label>
-          <textarea class="bu-textarea" id="bu-newProductDesc" style="min-height:55px" placeholder="What does this product do?"></textarea>
-        </div>
-        <div class="bu-field">
-          <label class="bu-label">Package Type</label>
-          <select class="bu-select" id="bu-newProductPkg">
-            <option value="white_capsule_bottle">White Capsule Bottle</option>
-            <option value="dark_standup_pouch">Silver/Dark Stand-up Pouch</option>
-            <option value="amber_tincture_bottle">Amber Glass Tincture Bottle</option>
-            <option value="dark_spray_bottle">Dark Glass Spray Bottle</option>
-            <option value="dark_syrup_bottle_qlife">Dark Plastic Syrup Bottle (Q Lyfe)</option>
-            <option value="other_jar">Other Jar</option>
-            <option value="combo">Combo Set</option>
-          </select>
-        </div>
-        <button class="bu-save-btn" onclick="buAddProduct()">Add Product</button>
+      <div class="bu-fg"><label class="bu-lbl">Accent / Gold Color</label>
+        <div class="bu-color-row"><input type="color" class="bu-color-sw" id="bu-colorAccentPicker" oninput="document.getElementById('bu-colorAccent').value=this.value;buLiveUpdate()"><input class="bu-inp" id="bu-colorAccent" type="text" placeholder="#c9a84c" oninput="if(/^#[0-9a-f]{6}$/i.test(this.value))document.getElementById('bu-colorAccentPicker').value=this.value;buLiveUpdate()"></div>
       </div>
-    </div>
-
-    <button class="bu-save-btn" onclick="buSavePrices()">Save Price Changes</button>
-  </div>
-
-  <!-- ── TAB: PROMOTIONS ── -->
-  <div class="bu-content" id="buPanel-promotions" style="display:none">
-    <div class="bu-section">
-      <div class="bu-section-title">Active Promotions</div>
-      <div id="buPromoList">
-        <div class="bu-empty-state"><div class="bu-empty-icon">&#x1F3F7;</div>No active promotions</div>
-      </div>
-    </div>
-
-    <div class="bu-section">
-      <div class="bu-section-title">Create New Promotion</div>
-      <div class="bu-add-product-form">
-        <div class="bu-field">
-          <label class="bu-label">Promotion Name</label>
-          <input class="bu-input" id="bu-promoName" type="text" placeholder="Winter Sale">
-        </div>
-        <div class="bu-field">
-          <label class="bu-label">Type</label>
-          <select class="bu-select" id="bu-promoType">
-            <option value="percentage_discount">Percentage Discount</option>
-            <option value="fixed_discount">Fixed Amount Off</option>
-            <option value="buy_x_get_y">Buy X Get Y</option>
-            <option value="free_delivery">Free Delivery</option>
-            <option value="combo_deal">Combo Deal</option>
-          </select>
-        </div>
-        <div class="bu-field">
-          <label class="bu-label">Value (% or R amount)</label>
-          <input class="bu-input" id="bu-promoValue" type="number" placeholder="15" min="0">
-        </div>
-        <div class="bu-field">
-          <label class="bu-label">Applies To</label>
-          <select class="bu-select" id="bu-promoProducts">
-            <option value="all">All Products</option>
-            <option value="capsules">Capsules Only</option>
-            <option value="powders">Powders Only</option>
-            <option value="tinctures">Tinctures Only</option>
-          </select>
-        </div>
-        <div class="bu-field">
-          <label class="bu-label">Start Date</label>
-          <input class="bu-input" id="bu-promoStart" type="date">
-        </div>
-        <div class="bu-field">
-          <label class="bu-label">End Date</label>
-          <input class="bu-input" id="bu-promoEnd" type="date">
-        </div>
-        <button class="bu-save-btn" onclick="buCreatePromo()">Create Promotion</button>
-      </div>
+      <div class="bu-divider">Image Generation</div>
+      <div class="bu-fg"><label class="bu-lbl">Default Style Recipe</label><textarea class="bu-ta" id="bu-defaultStyle" style="min-height:90px" placeholder="Describe the default visual aesthetic..."></textarea></div>
+      <button class="bu-btn" onclick="buSaveBrand()">Save Brand Identity</button>
     </div>
   </div>
 
-  <!-- ── TAB: OPERATIONS ── -->
-  <div class="bu-content" id="buPanel-operations" style="display:none">
-    <div class="bu-section">
-      <div class="bu-section-title">Delivery Methods</div>
-      <div class="bu-checkbox-grid" id="buDeliveryMethods">
-        <label class="bu-checkbox-item"><input type="checkbox" id="del-courier" value="courier"> Courier (nationwide)</label>
-        <label class="bu-checkbox-item"><input type="checkbox" id="del-local" value="local_delivery"> Local Delivery</label>
-        <label class="bu-checkbox-item"><input type="checkbox" id="del-collection" value="self_collection"> Self-Collection</label>
-        <label class="bu-checkbox-item"><input type="checkbox" id="del-paxi" value="paxi"> PAXI / PEP</label>
+  <!-- ── PRODUCTS ── -->
+  <div class="bu-panel" id="buPanel-products" style="display:none">
+    <div class="bu-form">
+      <div class="bu-divider">Product Prices <button class="bu-refresh-btn" onclick="buLoadProducts()">&#x21BB; Refresh</button></div>
+      <div id="buProductList"><div class="bu-empty"><div class="bu-empty-icon">&#x23F3;</div>Loading...</div></div>
+      <button class="bu-btn" onclick="buSavePrices()" style="margin-top:4px">Save Price Changes</button>
+      <div class="bu-divider" style="margin-top:28px">Add New Product</div>
+      <div class="bu-fg"><label class="bu-lbl">Product Name</label><input class="bu-inp" id="bu-newProductName" type="text" placeholder="Herbal Vitality Blend"></div>
+      <div class="bu-fg"><label class="bu-lbl">Price (ZAR)</label><input class="bu-inp" id="bu-newProductPrice" type="number" placeholder="350" min="0"></div>
+      <div class="bu-fg"><label class="bu-lbl">Short Description</label><textarea class="bu-ta" id="bu-newProductDesc" style="min-height:55px" placeholder="What does this product do?"></textarea></div>
+      <div class="bu-fg"><label class="bu-lbl">Package Type</label>
+        <select class="bu-sel" id="bu-newProductPkg">
+          <option value="white_capsule_bottle">White Capsule Bottle</option>
+          <option value="dark_standup_pouch">Silver/Dark Stand-up Pouch</option>
+          <option value="amber_tincture_bottle">Amber Glass Tincture Bottle</option>
+          <option value="dark_spray_bottle">Dark Glass Spray Bottle</option>
+          <option value="dark_syrup_bottle_qlife">Dark Plastic Syrup Bottle (Q Lyfe)</option>
+          <option value="other_jar">Other Jar</option>
+          <option value="combo">Combo Set</option>
+        </select>
       </div>
+      <button class="bu-btn" onclick="buAddProduct()">Add Product</button>
     </div>
-
-    <div class="bu-section">
-      <div class="bu-section-title">Payment Methods</div>
-      <div class="bu-checkbox-grid">
-        <label class="bu-checkbox-item"><input type="checkbox" id="pay-eft" value="EFT"> EFT / Bank Transfer</label>
-        <label class="bu-checkbox-item"><input type="checkbox" id="pay-cash" value="cash"> Cash</label>
-        <label class="bu-checkbox-item"><input type="checkbox" id="pay-snapscan" value="SnapScan"> SnapScan</label>
-        <label class="bu-checkbox-item"><input type="checkbox" id="pay-zapper" value="Zapper"> Zapper</label>
-        <label class="bu-checkbox-item"><input type="checkbox" id="pay-card" value="card"> Card (POS)</label>
-        <label class="bu-checkbox-item"><input type="checkbox" id="pay-ozow" value="Ozow"> Ozow / PayFast</label>
-      </div>
-    </div>
-
-    <div class="bu-section">
-      <div class="bu-section-title">Business Hours</div>
-      <div class="bu-field">
-        <label class="bu-label">Weekdays</label>
-        <input class="bu-input" id="bu-hoursWeekday" type="text" placeholder="Mon–Fri 08:00–17:00">
-      </div>
-      <div class="bu-field">
-        <label class="bu-label">Weekends</label>
-        <input class="bu-input" id="bu-hoursWeekend" type="text" placeholder="Sat 09:00–13:00, Sun closed">
-      </div>
-    </div>
-
-    <button class="bu-save-btn" onclick="buSaveOperations()">Save Operations</button>
   </div>
 
-  <!-- ── TAB: CONTACTS ── -->
-  <div class="bu-content" id="buPanel-contacts" style="display:none">
-    <div class="bu-section">
-      <div class="bu-section-title">Contact Details</div>
-      <div class="bu-field">
-        <label class="bu-label">WhatsApp / Phone</label>
-        <input class="bu-input" id="bu-phone" type="tel" placeholder="+27 83 123 4567">
+  <!-- ── PROMOTIONS ── -->
+  <div class="bu-panel" id="buPanel-promotions" style="display:none">
+    <div class="bu-form">
+      <div class="bu-divider">Active Promotions</div>
+      <div id="buPromoList"><div class="bu-empty"><div class="bu-empty-icon">&#x1F3F7;</div>No active promotions</div></div>
+      <div class="bu-divider" style="margin-top:24px">Create New Promotion</div>
+      <div class="bu-fg"><label class="bu-lbl">Promotion Name</label><input class="bu-inp" id="bu-promoName" type="text" placeholder="Winter Sale"></div>
+      <div class="bu-fg"><label class="bu-lbl">Type</label>
+        <select class="bu-sel" id="bu-promoType">
+          <option value="percentage_discount">Percentage Discount</option>
+          <option value="fixed_discount">Fixed Amount Off</option>
+          <option value="buy_x_get_y">Buy X Get Y</option>
+          <option value="free_delivery">Free Delivery</option>
+          <option value="combo_deal">Combo Deal</option>
+        </select>
       </div>
-      <div class="bu-field">
-        <label class="bu-label">Email Address</label>
-        <input class="bu-input" id="bu-email" type="email" placeholder="info@drgeemtshali.co.za">
+      <div class="bu-fg"><label class="bu-lbl">Value (% or R amount)</label><input class="bu-inp" id="bu-promoValue" type="number" placeholder="15" min="0"></div>
+      <div class="bu-fg"><label class="bu-lbl">Applies To</label>
+        <select class="bu-sel" id="bu-promoProducts">
+          <option value="all">All Products</option>
+          <option value="capsules">Capsules Only</option>
+          <option value="powders">Powders Only</option>
+          <option value="tinctures">Tinctures Only</option>
+        </select>
       </div>
-      <div class="bu-field">
-        <label class="bu-label">Website</label>
-        <input class="bu-input" id="bu-website" type="url" placeholder="https://drgeemtshali.co.za">
-      </div>
+      <div class="bu-fg"><label class="bu-lbl">Start Date</label><input class="bu-inp" id="bu-promoStart" type="date"></div>
+      <div class="bu-fg"><label class="bu-lbl">End Date</label><input class="bu-inp" id="bu-promoEnd" type="date"></div>
+      <button class="bu-btn" onclick="buCreatePromo()">Create Promotion</button>
     </div>
-    <div class="bu-section">
-      <div class="bu-section-title">Social Media</div>
-      <div class="bu-field">
-        <label class="bu-label">Instagram</label>
-        <input class="bu-input" id="bu-instagram" type="text" placeholder="@drgeewellness">
-      </div>
-      <div class="bu-field">
-        <label class="bu-label">Facebook</label>
-        <input class="bu-input" id="bu-facebook" type="text" placeholder="/DrGeeHerbalWellness">
-      </div>
-      <div class="bu-field">
-        <label class="bu-label">TikTok</label>
-        <input class="bu-input" id="bu-tiktok" type="text" placeholder="@drgeewellness">
-      </div>
-    </div>
-    <button class="bu-save-btn" onclick="buSaveContacts()">Save Contact Details</button>
   </div>
 
-  <!-- ── TAB: PREVIEW ── -->
-  <div class="bu-content" id="buPanel-preview" style="display:none">
-    <div id="buPreviewContent">
-      <div class="bu-empty-state"><div class="bu-empty-icon">&#x23F3;</div>Loading profile...</div>
-    </div>
-    <div class="bu-section" style="margin-top:20px">
-      <div class="bu-section-title">Recent Updates</div>
-      <div id="buOpLog">
-        <div class="bu-empty-state"><div class="bu-empty-icon">&#x1F4CB;</div>No operations logged yet</div>
+  <!-- ── OPERATIONS ── -->
+  <div class="bu-panel" id="buPanel-operations" style="display:none">
+    <div class="bu-form">
+      <div class="bu-divider">Delivery Methods</div>
+      <div class="bu-check-grid">
+        <label class="bu-check-opt"><input type="checkbox" id="del-courier" value="courier"> Courier (nationwide)</label>
+        <label class="bu-check-opt"><input type="checkbox" id="del-local" value="local_delivery"> Local Delivery</label>
+        <label class="bu-check-opt"><input type="checkbox" id="del-collection" value="self_collection"> Self-Collection</label>
+        <label class="bu-check-opt"><input type="checkbox" id="del-paxi" value="paxi"> PAXI / PEP</label>
       </div>
+      <div class="bu-divider">Payment Methods</div>
+      <div class="bu-check-grid">
+        <label class="bu-check-opt"><input type="checkbox" id="pay-eft" value="EFT"> EFT / Bank Transfer</label>
+        <label class="bu-check-opt"><input type="checkbox" id="pay-cash" value="cash"> Cash</label>
+        <label class="bu-check-opt"><input type="checkbox" id="pay-snapscan" value="SnapScan"> SnapScan</label>
+        <label class="bu-check-opt"><input type="checkbox" id="pay-zapper" value="Zapper"> Zapper</label>
+        <label class="bu-check-opt"><input type="checkbox" id="pay-card" value="card"> Card (POS)</label>
+        <label class="bu-check-opt"><input type="checkbox" id="pay-ozow" value="Ozow"> Ozow / PayFast</label>
+      </div>
+      <div class="bu-divider">Business Hours</div>
+      <div class="bu-fg"><label class="bu-lbl">Weekdays</label><input class="bu-inp" id="bu-hoursWeekday" type="text" placeholder="Mon–Fri 08:00–17:00"></div>
+      <div class="bu-fg"><label class="bu-lbl">Weekends</label><input class="bu-inp" id="bu-hoursWeekend" type="text" placeholder="Sat 09:00–13:00, Sun closed"></div>
+      <button class="bu-btn" onclick="buSaveOperations()">Save Operations</button>
+    </div>
+  </div>
+
+  <!-- ── CONTACTS ── -->
+  <div class="bu-panel" id="buPanel-contacts" style="display:none">
+    <div class="bu-form">
+      <div class="bu-divider">Contact Details</div>
+      <div class="bu-fg"><label class="bu-lbl">WhatsApp / Phone</label><input class="bu-inp" id="bu-phone" type="tel" placeholder="+27 83 123 4567"></div>
+      <div class="bu-fg"><label class="bu-lbl">Email Address</label><input class="bu-inp" id="bu-email" type="email" placeholder="info@drgeemtshali.co.za"></div>
+      <div class="bu-fg"><label class="bu-lbl">Website</label><input class="bu-inp" id="bu-website" type="url" placeholder="https://drgeemtshali.co.za"></div>
+      <div class="bu-divider">Social Media</div>
+      <div class="bu-fg"><label class="bu-lbl">Instagram</label><input class="bu-inp" id="bu-instagram" type="text" placeholder="@drgeewellness"></div>
+      <div class="bu-fg"><label class="bu-lbl">Facebook</label><input class="bu-inp" id="bu-facebook" type="text" placeholder="/DrGeeHerbalWellness"></div>
+      <div class="bu-fg"><label class="bu-lbl">TikTok</label><input class="bu-inp" id="bu-tiktok" type="text" placeholder="@drgeewellness"></div>
+      <button class="bu-btn" onclick="buSaveContacts()">Save Contact Details</button>
+    </div>
+  </div>
+
+  <!-- ── PREVIEW ── -->
+  <div class="bu-panel" id="buPanel-preview" style="display:none">
+    <div class="bu-prev-section">
+      <div id="buPreviewContent"><div class="bu-empty"><div class="bu-empty-icon">&#x23F3;</div>Loading profile...</div></div>
+      <div class="bu-divider" style="margin-top:8px">Recent Updates</div>
+      <div id="buOpLog"><div class="bu-empty"><div class="bu-empty-icon">&#x1F4CB;</div>No operations logged yet</div></div>
     </div>
   </div>
 
 </div><!-- end bu-page -->
 
 <!-- ===== BRAND UPLOAD SHEET ===== -->
-<div class="bu-upload-overlay" id="buUploadOverlay" onclick="buCloseUploadOnBg(event)">
-  <div class="bu-upload-sheet" id="buUploadSheet">
-    <div class="bu-upload-sheet-title">&#x1F4E4; Upload Brand Info</div>
-    <div class="bu-upload-sheet-sub">Upload packaging photos, brand guides, PDFs or text files. AI will extract structured data and pre-fill your forms.</div>
-
-    <div class="bu-upload-drop" id="buUploadDrop" onclick="document.getElementById('buFileInput').click()"
-         ondragover="event.preventDefault();this.classList.add('dragging')"
-         ondragleave="this.classList.remove('dragging')"
+<div class="bu-sheet-overlay" id="buUploadOverlay" onclick="buCloseUploadOnBg(event)">
+  <div class="bu-sheet" id="buUploadSheet">
+    <div class="bu-sheet-handle"></div>
+    <div class="bu-sheet-title">&#x2B06; Upload Brand Info</div>
+    <div class="bu-sheet-sub">Upload packaging photos, brand guides, PDFs or text files. AI extracts structured data and pre-fills your forms.</div>
+    <div class="bu-drop" id="buUploadDrop" onclick="document.getElementById('buFileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
          ondrop="buHandleDrop(event)">
-      <div class="bu-upload-drop-icon">&#x1F4F7;</div>
-      <div class="bu-upload-drop-text">
-        <strong>Tap to select file</strong><br>
-        or drag &amp; drop here<br>
-        <span style="font-size:11px">Images, PDF, TXT, CSV</span>
-      </div>
+      <div class="bu-drop-icon">&#x1F4F7;</div>
+      <div class="bu-drop-text"><strong>Tap to select file</strong><br>or drag &amp; drop &middot; Images, PDF, TXT, CSV</div>
     </div>
-
-    <div id="buAnalyzingBar" style="display:none" class="bu-analyzing-bar">
-      <span class="bu-spinner"></span>&nbsp; Analyzing with AI...
-    </div>
-
+    <div id="buAnalyzingBar" style="display:none" class="bu-analyzing"><span class="bu-spinner"></span>&nbsp; Analyzing with AI...</div>
     <div id="buExtractedSection" style="display:none">
-      <div class="bu-extracted-title">&#x2705; Extracted Data — select what to apply</div>
+      <div class="bu-ext-title">&#x2705; Extracted — select fields to apply</div>
       <div id="buExtractedList"></div>
-      <button class="bu-apply-btn" onclick="buApplyExtracted()">Apply Selected to Forms</button>
+      <button class="bu-btn bu-btn-green" onclick="buApplyExtracted()">Apply Selected to Forms</button>
     </div>
-
-    <button class="bu-close-sheet-btn" onclick="closeBrandUpload()">Cancel</button>
+    <button class="bu-btn" style="background:transparent;border:1px solid rgba(59,130,246,.2);box-shadow:none;color:#64748b;margin-top:8px" onclick="closeBrandUpload()">Cancel</button>
   </div>
 </div>
 
@@ -2261,9 +2147,21 @@ function clearChat() {
 // BUSINESS UPDATER
 // ============================================================
 let buState = null;
-let buCurrentTab = 'brand';
+let buCurrentTab = 'canvas';
 let buExtractedData = null;
-let buPriceEdits = {}; // slug -> new price
+let buPriceEdits = {};
+
+// Scene gradient configs per package type — evoke natural environments
+const BU_SCENE = {
+  white_capsule_bottle:    'linear-gradient(160deg,#0d2b1a 0%,#1a4a2e 40%,#2d6b3f 70%,#1f3d25 100%)',
+  dark_standup_pouch:      'linear-gradient(160deg,#2b1a06 0%,#4a3010 40%,#7a5520 70%,#3d2808 100%)',
+  amber_tincture_bottle:   'linear-gradient(160deg,#1a0e05 0%,#3b2010 40%,#5a3418 70%,#2a1608 100%)',
+  dark_spray_bottle:       'linear-gradient(160deg,#04101e 0%,#0a2240 40%,#0f3660 70%,#061528 100%)',
+  dark_syrup_bottle_qlife: 'linear-gradient(160deg,#060412 0%,#0e0828 40%,#180f40 70%,#0a0620 100%)',
+  other_jar:               'linear-gradient(160deg,#0e0e12 0%,#1a1a24 40%,#2a2a38 70%,#141420 100%)',
+  combo:                   'linear-gradient(160deg,#1a0e00 0%,#3d2200 40%,#6b4400 70%,#2a1600 100%)',
+  default:                 'linear-gradient(160deg,#060912 0%,#0f1c30 50%,#060912 100%)'
+};
 
 function buServerBase() {
   return localStorage.getItem('cws_server_base') || '';
@@ -2282,8 +2180,9 @@ function buToast(msg, type = '') {
 }
 
 async function buInit() {
+  buSwitchTab('canvas');
   await buLoadState();
-  buSwitchTab('brand');
+  buRenderShowcase();
 }
 
 async function buLoadState() {
@@ -2295,6 +2194,7 @@ async function buLoadState() {
     buState = await r.json();
     document.getElementById('buBusinessLabel').textContent = buState.display_name || buState.business_name || buBusinessId();
     buFillForms();
+    buLiveUpdate();
   } catch (e) {
     buToast('Could not load business profile: ' + e.message, 'error');
   }
@@ -2312,7 +2212,7 @@ function buFillForms() {
   _buSet('bu-colorSecondary', (id.colors || {}).secondary || '');
   _buSet('bu-colorAccent', (id.colors || {}).accent_gold || '');
   _buSet('bu-defaultStyle', (buState.image_gen || {}).default_style_recipe || '');
-  // Sync color swatches
+  // Sync color pickers
   ['Primary','Secondary','Accent'].forEach(k => {
     const hex = document.getElementById('bu-color' + k).value;
     if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
@@ -2321,7 +2221,7 @@ function buFillForms() {
   });
   // Contacts
   const contacts = buState.contacts || {};
-  _buSet('bu-phone', contacts.phone || (buState.whatsapp || {}).phone_number_id !== 'pending_meta_setup' ? (buState.whatsapp || {}).phone_number_id : '');
+  _buSet('bu-phone', contacts.phone || '');
   _buSet('bu-email', contacts.email || '');
   _buSet('bu-website', contacts.website || (buState.crm || {}).base_url || '');
   _buSet('bu-instagram', contacts.instagram || '');
@@ -2348,10 +2248,103 @@ function _buSet(id, val) {
   if (el && val !== undefined && val !== null) el.value = val;
 }
 
+// ── Live Canvas Update (runs on every identity input) ──
+function buLiveUpdate() {
+  const name = document.getElementById('bu-displayName')?.value || (buState?.display_name) || 'DR GEE';
+  const label = document.getElementById('bu-labelText')?.value || (buState?.identity?.brand_label_text) || 'DR GEE';
+  const tone = document.getElementById('bu-toneOfVoice')?.value || (buState?.identity?.tone_of_voice) || '';
+  const market = document.getElementById('bu-targetMarket')?.value || (buState?.identity?.target_market) || '';
+  const c1 = document.getElementById('bu-colorPrimary')?.value || '#1a3a3a';
+  const c2 = document.getElementById('bu-colorSecondary')?.value || '#2d2d2d';
+  const c3 = document.getElementById('bu-colorAccent')?.value || '#c9a84c';
+
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const setStyle = (id, prop, val) => { const el = document.getElementById(id); if (el) el.style[prop] = val; };
+
+  setEl('cvBrandName', label.toUpperCase() || name.toUpperCase());
+  setEl('cvTypeHeading', label.toUpperCase() || name.toUpperCase());
+  if (tone) setEl('cvTone', tone);
+  if (market) setEl('cvMarket', market);
+
+  // Color slabs
+  if (/^#[0-9a-fA-F]{6}$/.test(c1)) {
+    setStyle('cvSlab1', 'background', c1);
+    setStyle('cvDot1', 'background', c1);
+    setEl('cvHex1', c1);
+    const s1 = document.getElementById('cvSlab1');
+    if (s1) s1.setAttribute('onclick', `buCopyColor('${c1}')`);
+  }
+  if (/^#[0-9a-fA-F]{6}$/.test(c2)) {
+    setStyle('cvSlab2', 'background', c2);
+    setStyle('cvDot2', 'background', c2);
+    setEl('cvHex2', c2);
+    const s2 = document.getElementById('cvSlab2');
+    if (s2) s2.setAttribute('onclick', `buCopyColor('${c2}')`);
+  }
+  if (/^#[0-9a-fA-F]{6}$/.test(c3)) {
+    setStyle('cvSlab3', 'background', c3);
+    setStyle('cvDot3', 'background', c3);
+    setEl('cvHex3', c3);
+    const s3 = document.getElementById('cvSlab3');
+    if (s3) s3.setAttribute('onclick', `buCopyColor('${c3}')`);
+  }
+}
+
+// ── Copy color to clipboard ──
+function buCopyColor(hex) {
+  navigator.clipboard.writeText(hex).then(() => buToast(`Copied ${hex}`, 'success')).catch(() => buToast(hex));
+}
+
+// ── Product Showcase on Brand Canvas ──
+async function buRenderShowcase() {
+  const showcase = document.getElementById('cvShowcase');
+  if (!showcase) return;
+  const base = buServerBase();
+  if (!base) {
+    showcase.innerHTML = '<div class="bu-empty" style="min-width:100%;padding:12px 0;font-size:11px;color:#64748b">Start server to see product showcase</div>';
+    return;
+  }
+  try {
+    const [catRes, genRes] = await Promise.all([
+      fetch(`${base}/api/catalogue`).then(r => r.ok ? r.json() : []),
+      fetch(`${base}/api/generated-list?limit=20`).then(r => r.ok ? r.json() : [])
+    ]);
+
+    // Build slug → generated image map
+    const genMap = {};
+    (Array.isArray(genRes) ? genRes : (genRes.images || [])).forEach(g => {
+      if (g.slug && g.url) genMap[g.slug] = g.url;
+    });
+
+    const products = Array.isArray(catRes) ? catRes.slice(0, 16) : [];
+    if (!products.length) {
+      showcase.innerHTML = '<div class="bu-empty" style="min-width:100%;padding:12px 0;font-size:11px;color:#64748b">No products found</div>';
+      return;
+    }
+
+    showcase.innerHTML = products.map(p => {
+      const scene = BU_SCENE[p.package_type] || BU_SCENE.default;
+      const imgUrl = genMap[p.slug];
+      const shortName = p.name.length > 20 ? p.name.slice(0, 18) + '…' : p.name;
+      return `<div class="bu-sc-card" onclick="buToast('${shortName.replace(/'/g,"&#39;")} — R${p.price || "?"}')">
+        <div class="bu-sc-scene" style="background:${scene}">
+          ${imgUrl
+            ? `<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px 10px 0 0;opacity:.85">`
+            : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:28px">🌿</div>`}
+        </div>
+        <div class="bu-sc-name">${shortName}</div>
+        <div class="bu-sc-price">R${p.price || '—'}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    showcase.innerHTML = `<div class="bu-empty" style="min-width:100%;padding:12px 0;font-size:11px;color:#64748b">Showcase unavailable</div>`;
+  }
+}
+
 function buSwitchTab(tab) {
   buCurrentTab = tab;
   document.querySelectorAll('.bu-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.bu-content').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.bu-panel').forEach(p => p.style.display = 'none');
   const tabEl = document.getElementById('buTab-' + tab);
   const panelEl = document.getElementById('buPanel-' + tab);
   if (tabEl) tabEl.classList.add('active');
@@ -2360,6 +2353,7 @@ function buSwitchTab(tab) {
   if (tab === 'products') buLoadProducts();
   if (tab === 'promotions') buLoadPromos();
   if (tab === 'preview') buLoadPreview();
+  if (tab === 'canvas') buRenderShowcase();
 }
 
 // ── Products tab ──
@@ -2367,28 +2361,33 @@ async function buLoadProducts() {
   const base = buServerBase();
   if (!base) return;
   const container = document.getElementById('buProductList');
-  container.innerHTML = '<div class="bu-empty-state"><div class="bu-empty-icon">&#x23F3;</div>Loading...</div>';
+  container.innerHTML = '<div class="bu-empty"><div class="bu-empty-icon">&#x23F3;</div>Loading...</div>';
   try {
     const r = await fetch(`${base}/api/catalogue`);
     if (!r.ok) throw new Error('Catalogue unavailable');
     const products = await r.json();
     buPriceEdits = {};
-    container.innerHTML = products.map(p => `
-      <div class="bu-product-item">
-        <div class="bu-product-row">
-          <span class="bu-product-name" title="${p.name}">${p.name}</span>
+    container.innerHTML = products.map(p => {
+      const slug = p.slug || p.name;
+      const safeSlug = slug.replace(/'/g, "\\'");
+      return `<div class="bu-prod-item">
+        <div class="bu-prod-info">
+          <div class="bu-prod-name" title="${p.name}">${p.name}</div>
+          <div class="bu-prod-meta">
+            ${p.slug ? `<span class="bu-tag">${p.slug}</span>` : ''}
+            ${p.package_type ? `<span class="bu-tag bu-tag-blue">${p.package_type.replace(/_/g,' ')}</span>` : ''}
+            ${p.cached ? '<span class="bu-tag bu-tag-green">cached</span>' : ''}
+          </div>
+        </div>
+        <div class="bu-price-wrap">
           <span class="bu-price-prefix">R</span>
-          <input class="bu-price-input" data-slug="${p.slug || p.name}" value="${p.price || ''}"
-            oninput="buPriceEdits['${p.slug || p.name}'] = this.value" type="number" min="0">
+          <input data-slug="${slug}" value="${p.price || ''}"
+            oninput="buPriceEdits['${safeSlug}'] = this.value" type="number" min="0">
         </div>
-        <div class="bu-product-meta">
-          <span class="bu-product-slug">${p.slug || ''}</span>
-          ${p.package_type ? `<span class="bu-product-pkg">${p.package_type.replace(/_/g,' ')}</span>` : ''}
-          ${p.cached ? '<span class="bu-product-pkg" style="color:var(--accent);border-color:var(--accent)">cached</span>' : ''}
-        </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch (e) {
-    container.innerHTML = `<div class="bu-empty-state"><div class="bu-empty-icon">&#x26A0;</div>${e.message}</div>`;
+    container.innerHTML = `<div class="bu-empty"><div class="bu-empty-icon">&#x26A0;</div>${e.message}</div>`;
   }
 }
 
@@ -2438,7 +2437,7 @@ async function buAddProduct() {
   } catch (e) { buToast('Error: ' + e.message, 'error'); }
 }
 
-// ── Brand tab ──
+// ── Identity / Brand tab ──
 async function buSaveBrand() {
   const base = buServerBase();
   const updates = {
@@ -2530,22 +2529,22 @@ function buLoadPromos() {
   const container = document.getElementById('buPromoList');
   const promos = buState.active_promotions || [];
   if (!promos.length) {
-    container.innerHTML = '<div class="bu-empty-state"><div class="bu-empty-icon">&#x1F3F7;</div>No active promotions</div>';
+    container.innerHTML = '<div class="bu-empty"><div class="bu-empty-icon">&#x1F3F7;</div>No active promotions</div>';
     return;
   }
   container.innerHTML = promos.map(p => `
-    <div class="bu-promo-item">
-      <div class="bu-promo-header">
+    <div class="bu-promo-card">
+      <div class="bu-promo-hdr">
         <span class="bu-promo-name">${p.name}</span>
-        <span class="bu-promo-badge ${p.active ? 'active' : 'expired'}">${p.active ? 'Active' : 'Expired'}</span>
+        <span class="bu-badge ${p.active ? 'bu-badge-green' : 'bu-badge-red'}">${p.active ? 'Active' : 'Expired'}</span>
       </div>
       <div class="bu-promo-detail">
-        Type: ${p.type.replace(/_/g,' ')}<br>
-        Value: ${p.value}${p.type === 'percentage_discount' ? '%' : ' ZAR'}<br>
-        Products: ${Array.isArray(p.products) ? p.products.join(', ') : p.products}<br>
-        ${p.starts ? 'From: ' + p.starts + '&nbsp;&nbsp;' : ''}${p.expires ? 'Until: ' + p.expires : ''}
+        ${p.type.replace(/_/g,' ')} &middot;
+        ${p.value}${p.type === 'percentage_discount' ? '%' : ' ZAR'} off &middot;
+        ${Array.isArray(p.products) ? p.products.join(', ') : p.products}
+        ${p.starts ? '<br>From: ' + p.starts : ''}${p.expires ? '&nbsp;&nbsp;Until: ' + p.expires : ''}
       </div>
-      <button class="bu-promo-expire-btn" onclick="buExpirePromo('${p.id}')">&#x274C; Expire this promotion</button>
+      <button class="bu-promo-expire" onclick="buExpirePromo('${p.id}')">&#x274C; Expire promotion</button>
     </div>`).join('');
 }
 
@@ -2602,84 +2601,80 @@ async function buLoadPreview() {
   const promos = s.active_promotions || [];
   const ops = s.operations || {};
 
-  const swatchHtml = (hex, label) => hex
-    ? `<span class="bu-color-dot" style="background:${hex}"></span>${label} <span style="color:var(--text-muted);font-size:10px">${hex}</span>`
-    : '—';
+  const cdot = hex => hex ? `<span class="bu-cdot" style="background:${hex};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle"></span>${hex}` : '—';
 
   document.getElementById('buPreviewContent').innerHTML = `
-    <div style="text-align:center;margin-bottom:16px">
-      <div class="bu-brand-badge">${id.brand_label_text || s.business_name || 'DR GEE'}</div>
-      <div style="font-size:13px;color:var(--text-muted)">${s.display_name || ''} &mdash; Est. 1992</div>
+    <div class="bu-prev-hero">
+      <div class="bu-prev-badge">${id.brand_label_text || s.business_name || 'DR GEE'}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">${s.display_name || ''} &mdash; Est. 1992</div>
     </div>
 
-    <div class="bu-preview-card">
-      <div class="bu-preview-card-title">&#x1F3A8; Brand Identity</div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Display Name</span><span class="bu-preview-val">${s.display_name || '—'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Label Text</span><span class="bu-preview-val" style="font-weight:700;letter-spacing:1px">${id.brand_label_text || '—'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Primary</span><span class="bu-preview-val">${swatchHtml(colors.primary, '')}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Secondary</span><span class="bu-preview-val">${swatchHtml(colors.secondary, '')}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Accent Gold</span><span class="bu-preview-val">${swatchHtml(colors.accent_gold, '')}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Target Market</span><span class="bu-preview-val">${id.target_market || '—'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Brand Story</span><span class="bu-preview-val">${id.brand_story || '—'}</span></div>
+    <div class="bu-prev-card">
+      <div class="bu-prev-title">&#x1F3A8; Brand Identity</div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Display Name</span><span class="bu-prev-val">${s.display_name || '—'}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Label Text</span><span class="bu-prev-val" style="font-weight:700;letter-spacing:1px">${id.brand_label_text || '—'}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Primary</span><span class="bu-prev-val">${cdot(colors.primary)}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Secondary</span><span class="bu-prev-val">${cdot(colors.secondary)}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Accent Gold</span><span class="bu-prev-val">${cdot(colors.accent_gold)}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Target Market</span><span class="bu-prev-val">${id.target_market || '—'}</span></div>
     </div>
 
-    <div class="bu-preview-card">
-      <div class="bu-preview-card-title">&#x1F5E3; Tone of Voice</div>
-      <div style="font-size:12px;color:var(--text);line-height:1.6;font-style:italic">"${id.tone_of_voice || '—'}"</div>
+    <div class="bu-prev-card">
+      <div class="bu-prev-title">&#x1F5E3; Tone of Voice</div>
+      <div style="font-size:12px;color:#e2e8f0;line-height:1.6;font-style:italic">"${id.tone_of_voice || '—'}"</div>
     </div>
 
-    <div class="bu-preview-card">
-      <div class="bu-preview-card-title">&#x1F4E6; Catalogue</div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Products</span><span class="bu-preview-val">${cat.product_count || '—'} active</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">CRM Products</span><span class="bu-preview-val">${(s.crm || {}).product_count_crm || '—'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Image Cached</span><span class="bu-preview-val">${cat.cached_product_count || 0} products</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Package Types</span><span class="bu-preview-val">${(cat.package_types || []).length} types</span></div>
+    <div class="bu-prev-card">
+      <div class="bu-prev-title">&#x1F4E6; Catalogue</div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Products</span><span class="bu-prev-val">${cat.product_count || '—'} active</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Image Cached</span><span class="bu-prev-val">${cat.cached_product_count || 0} products</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Package Types</span><span class="bu-prev-val">${(cat.package_types || []).length} types</span></div>
     </div>
 
-    <div class="bu-preview-card">
-      <div class="bu-preview-card-title">&#x1F3F7; Promotions</div>
+    <div class="bu-prev-card">
+      <div class="bu-prev-title">&#x1F3F7; Promotions</div>
       ${promos.length
-        ? promos.map(p => `<div class="bu-preview-row"><span class="bu-preview-key">${p.name}</span><span class="bu-preview-val" style="color:var(--accent)">${p.value}${p.type==='percentage_discount'?'% off':'R off'} — until ${p.expires||'?'}</span></div>`).join('')
-        : '<div style="font-size:12px;color:var(--text-muted)">No active promotions</div>'
+        ? promos.map(p => `<div class="bu-prev-row"><span class="bu-prev-key">${p.name}</span><span class="bu-prev-val" style="color:#60a5fa">${p.value}${p.type==='percentage_discount'?'% off':'R off'} &mdash; until ${p.expires||'?'}</span></div>`).join('')
+        : '<div style="font-size:12px;color:#64748b">No active promotions</div>'
       }
     </div>
 
-    <div class="bu-preview-card">
-      <div class="bu-preview-card-title">&#x1F5BC; Image Generation</div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Model</span><span class="bu-preview-val">${ig.model || '—'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Format</span><span class="bu-preview-val">${ig.aspect_ratio || '—'} ${ig.resolution || ''}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Named Styles</span><span class="bu-preview-val">${Object.keys(ig.named_styles || {}).join(', ') || 'None'}</span></div>
+    <div class="bu-prev-card">
+      <div class="bu-prev-title">&#x1F5BC; Image Generation</div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Model</span><span class="bu-prev-val">${ig.model || '—'}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Format</span><span class="bu-prev-val">${ig.aspect_ratio || '—'} ${ig.resolution || ''}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Named Styles</span><span class="bu-prev-val">${Object.keys(ig.named_styles || {}).join(', ') || 'None'}</span></div>
     </div>
 
-    <div class="bu-preview-card">
-      <div class="bu-preview-card-title">&#x2699; Operations</div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Delivery</span><span class="bu-preview-val">${(ops.delivery_methods || []).join(', ') || 'Not set'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Payment</span><span class="bu-preview-val">${(ops.payment_methods || []).join(', ') || 'Not set'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Hours</span><span class="bu-preview-val">${(ops.hours || {}).weekday || 'Not set'}</span></div>
+    <div class="bu-prev-card">
+      <div class="bu-prev-title">&#x2699; Operations</div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Delivery</span><span class="bu-prev-val">${(ops.delivery_methods || []).join(', ') || 'Not set'}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Payment</span><span class="bu-prev-val">${(ops.payment_methods || []).join(', ') || 'Not set'}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Hours</span><span class="bu-prev-val">${(ops.hours || {}).weekday || 'Not set'}</span></div>
     </div>
 
-    <div class="bu-preview-card">
-      <div class="bu-preview-card-title">&#x1F4F1; WhatsApp &amp; CRM</div>
-      <div class="bu-preview-row"><span class="bu-preview-key">WhatsApp</span><span class="bu-preview-val" style="color:${(s.whatsapp||{}).status==='not_configured'?'var(--text-muted)':'var(--accent)'}">${(s.whatsapp||{}).status==='not_configured'?'Pending META setup':'Configured'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">CRM</span><span class="bu-preview-val">${(s.crm||{}).base_url || '—'}</span></div>
-      <div class="bu-preview-row"><span class="bu-preview-key">Last Updated</span><span class="bu-preview-val">${s.last_updated ? new Date(s.last_updated).toLocaleString() : '—'}</span></div>
+    <div class="bu-prev-card">
+      <div class="bu-prev-title">&#x1F4F1; WhatsApp &amp; CRM</div>
+      <div class="bu-prev-row"><span class="bu-prev-key">WhatsApp</span><span class="bu-prev-val" style="color:${(s.whatsapp||{}).status==='not_configured'?'#64748b':'#34d399'}">${(s.whatsapp||{}).status==='not_configured'?'Pending META setup':'Configured'}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">CRM</span><span class="bu-prev-val">${(s.crm||{}).base_url || '—'}</span></div>
+      <div class="bu-prev-row"><span class="bu-prev-key">Last Updated</span><span class="bu-prev-val">${s.last_updated ? new Date(s.last_updated).toLocaleString() : '—'}</span></div>
     </div>
   `;
 
-  // Load operations log
+  // Operations log
   try {
     const base = buServerBase();
     const r = await fetch(`${base}/api/business/recent-operations?id=${buBusinessId()}&limit=10`);
     const ops_log = await r.json();
     const logEl = document.getElementById('buOpLog');
     if (!ops_log.length) {
-      logEl.innerHTML = '<div class="bu-empty-state"><div class="bu-empty-icon">&#x1F4CB;</div>No operations logged yet</div>';
+      logEl.innerHTML = '<div class="bu-empty"><div class="bu-empty-icon">&#x1F4CB;</div>No operations logged yet</div>';
     } else {
       logEl.innerHTML = ops_log.reverse().map(op => {
         const changes = Object.keys(op.changes || {});
-        return `<div class="bu-op-log-item">
-          <div class="bu-op-log-time">${new Date(op.timestamp).toLocaleString()} &mdash; <strong>${op.category}</strong></div>
-          <div class="bu-op-log-desc">${changes.length ? changes.join(', ') : JSON.stringify(op.changes).slice(0,80)}</div>
+        return `<div class="bu-log-item">
+          <div class="bu-log-time">${new Date(op.timestamp).toLocaleString()} &mdash; <strong>${op.category}</strong></div>
+          <div class="bu-log-desc">${changes.length ? changes.join(', ') : JSON.stringify(op.changes).slice(0,80)}</div>
         </div>`;
       }).join('');
     }
@@ -2692,8 +2687,8 @@ function openBrandUpload() {
   document.getElementById('buExtractedSection').style.display = 'none';
   document.getElementById('buAnalyzingBar').style.display = 'none';
   const drop = document.getElementById('buUploadDrop');
-  drop.innerHTML = `<div class="bu-upload-drop-icon">&#x1F4F7;</div>
-    <div class="bu-upload-drop-text"><strong>Tap to select file</strong><br>or drag &amp; drop here<br><span style="font-size:11px">Images, PDF, TXT, CSV</span></div>`;
+  drop.innerHTML = `<div class="bu-drop-icon">&#x1F4F7;</div>
+    <div class="bu-drop-text"><strong>Tap to select file</strong><br>or drag &amp; drop here<br><span style="font-size:11px">Images, PDF, TXT, CSV</span></div>`;
 }
 
 function closeBrandUpload() {
@@ -2706,7 +2701,7 @@ function buCloseUploadOnBg(e) {
 
 function buHandleDrop(e) {
   e.preventDefault();
-  document.getElementById('buUploadDrop').classList.remove('dragging');
+  document.getElementById('buUploadDrop').classList.remove('drag');
   const file = e.dataTransfer.files[0];
   if (file) buProcessFile(file);
 }
@@ -2719,14 +2714,13 @@ function buHandleFileSelect(e) {
 
 async function buProcessFile(file) {
   const drop = document.getElementById('buUploadDrop');
-  drop.innerHTML = `<div class="bu-upload-drop-icon">&#x1F4C4;</div><div class="bu-upload-drop-text"><strong>${file.name}</strong><br>${(file.size/1024).toFixed(0)} KB</div>`;
-
+  drop.innerHTML = `<div class="bu-drop-icon">&#x1F4C4;</div><div class="bu-drop-text"><strong>${file.name}</strong><br>${(file.size/1024).toFixed(0)} KB</div>`;
   document.getElementById('buAnalyzingBar').style.display = 'block';
   document.getElementById('buExtractedSection').style.display = 'none';
 
   const reader = new FileReader();
   reader.onload = async (ev) => {
-    const b64 = ev.target.result; // full data URI
+    const b64 = ev.target.result;
     const base = buServerBase();
     try {
       const r = await fetch(`${base}/api/business/analyze-upload`, {
@@ -2752,31 +2746,27 @@ async function buProcessFile(file) {
 function buRenderExtracted(data) {
   const container = document.getElementById('buExtractedList');
   const items = [];
-
   const flat = (obj, prefix = '') => {
     Object.entries(obj).forEach(([k, v]) => {
       if (v === null || v === undefined || v === '') return;
-      if (typeof v === 'object' && !Array.isArray(v)) {
-        flat(v, prefix + k + '.');
-      } else {
-        items.push({ key: prefix + k, val: Array.isArray(v) ? v.join(', ') : String(v) });
-      }
+      if (typeof v === 'object' && !Array.isArray(v)) { flat(v, prefix + k + '.'); }
+      else { items.push({ key: prefix + k, val: Array.isArray(v) ? v.join(', ') : String(v) }); }
     });
   };
   flat(data);
 
   if (!items.length) {
-    container.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">No structured data could be extracted.</div>';
+    container.innerHTML = '<div style="font-size:12px;color:#64748b">No structured data could be extracted.</div>';
     document.getElementById('buExtractedSection').style.display = 'block';
     return;
   }
 
   container.innerHTML = items.map((item, i) => `
-    <div class="bu-extracted-item">
+    <div class="bu-ext-item">
       <input type="checkbox" id="buEx-${i}" checked>
       <div>
-        <div class="bu-extracted-key">${item.key}</div>
-        <div class="bu-extracted-val">${item.val}</div>
+        <div class="bu-ext-key">${item.key}</div>
+        <div class="bu-ext-val">${item.val}</div>
       </div>
     </div>`).join('');
 
@@ -2807,7 +2797,8 @@ function buApplyExtracted() {
   });
 
   closeBrandUpload();
-  buSwitchTab('brand');
+  buSwitchTab('identity');
+  buLiveUpdate();
   buToast(`Applied ${selected.length} field${selected.length !== 1 ? 's' : ''} to forms`, 'success');
 }
 
