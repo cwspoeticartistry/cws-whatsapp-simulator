@@ -302,9 +302,18 @@ def find_product(text, catalogue):
 
 
 def find_all_products(text: str, cat: list) -> list:
-    """Return every product whose full name appears in text (case-insensitive)."""
+    """Return every product whose name OR product_line appears in text (case-insensitive)."""
     t = text.lower()
-    return [p for p in cat if p["name"].lower() in t]
+    found = []
+    seen = set()
+    for p in cat:
+        name = p["name"].lower()
+        pl = (p.get("product_line") or "").lower()
+        if name in t or (len(pl) > 5 and pl in t):
+            if p["name"] not in seen:
+                found.append(p)
+                seen.add(p["name"])
+    return found
 
 
 # Intent constants
@@ -955,8 +964,21 @@ def webhook():
             ).start()
             return jsonify({"job_id": jid})
 
-        # --- Selected product from catalogue browser (skip text classification) ---
-        if selected_product:
+        # --- Selected product(s) from catalogue browser (skip text classification) ---
+        selected_products = data.get("selected_products") or []
+        if selected_product and not selected_products:
+            selected_products = [selected_product]
+
+        if len(selected_products) > 1:
+            jid, _ = _new_job()
+            threading.Thread(
+                target=_run_multi_product_chat_job,
+                args=(jid, data, selected_products),
+                daemon=True,
+            ).start()
+            return jsonify({"job_id": jid, "multi": True, "count": len(selected_products)})
+
+        if selected_products:
             jid, _ = _new_job()
             threading.Thread(target=_process_request, args=(jid, data), daemon=True).start()
             return jsonify({"job_id": jid})
@@ -983,12 +1005,14 @@ def webhook():
             )})
 
         if intent == _INTENT_MULTI:
-            names_str = "\n".join([f"  {i+1}. {p['name']}" for i, p in enumerate(matched)])
-            return jsonify({"reply": (
-                f"I found {len(matched)} matching products:\n\n{names_str}\n\n"
-                f"Which one would you like to generate an image for? "
-                f"(Or tap the catalogue button to browse all products)"
-            )})
+            # Generate all matched products in a single batch job
+            jid, _ = _new_job()
+            threading.Thread(
+                target=_run_multi_product_chat_job,
+                args=(jid, data, [p["name"] for p in matched]),
+                daemon=True,
+            ).start()
+            return jsonify({"job_id": jid, "multi": True, "count": len(matched)})
 
         if intent == _INTENT_AMBIGUOUS:
             return jsonify({"reply": (
@@ -1004,6 +1028,106 @@ def webhook():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"reply": f"Server error: {str(e)}"}), 500
+
+
+def _run_multi_product_chat_job(jid: str, data: dict, product_names: list):
+    """Background thread — generates images for multiple products, emitting each result as it completes."""
+    def progress(msg):
+        _emit(jid, "step", msg)
+
+    try:
+        from generate_social_image import generate_social_image
+    except ImportError as e:
+        _emit(jid, "error", f"Cannot import generate_social_image: {e}")
+        return
+
+    scene_description = data.get("scene_description")
+    scene_b64   = data.get("message", {}).get("image", {}).get("base64")
+    scene_mime  = data.get("message", {}).get("image", {}).get("mime_type", "image/jpeg")
+    scene_filename = data.get("message", {}).get("image", {}).get("filename", "scene-reference")
+
+    # Analyse scene once for all products
+    scene_brief = None
+    scene_text = scene_description
+    if scene_b64:
+        progress("Analysing reference scene...")
+        scene_brief = analyze_scene_image(scene_b64, scene_mime, "place product in this scene")
+        if scene_brief:
+            scene_text = scene_brief.get("scene_prompt", "reference scene")
+        else:
+            scene_text = scene_description or "user-uploaded reference scene"
+
+    total = len(product_names)
+    generated = 0
+
+    for i, name in enumerate(product_names):
+        progress(f"[{i+1}/{total}] Finding {name}...")
+
+        product = next((p for p in catalogue if p["name"] == name), None)
+        if not product:
+            product = find_product(name, catalogue)
+        if not product:
+            progress(f"[{i+1}/{total}] {name} — not found, skipping")
+            continue
+
+        name = product["name"]
+        price = product.get("price", 0)
+        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+        cache_entry = next(
+            (ce for ce in cache.values() if ce.get("product_name", "").lower() == name.lower()),
+            None,
+        )
+        img_file = find_image_for_product(name)
+
+        progress(f"[{i+1}/{total}] Building prompt for {name}...")
+        image_prompt = assemble_prompt(
+            product, cache_entry, None, scene_text,
+            img_file=img_file, scene_brief=scene_brief,
+        )
+        video_prompt = assemble_video_prompt(
+            product, cache_entry, scene_text or "premium wellness setting",
+            img_file=img_file, scene_brief=scene_brief,
+        )
+
+        local_path = None
+        image_url = None
+        try:
+            result = generate_social_image(
+                prompt=image_prompt,
+                product_slug=slug,
+                output_dir=str(GENERATED_DIR),
+                product_image_files=[img_file] if img_file else None,
+                scene_image_base64=scene_b64,
+                scene_image_filename=scene_filename,
+                on_progress=progress,
+            )
+            local_path = result.get("local_path")
+            image_url = result.get("image_url")
+            generated += 1
+        except Exception as e:
+            progress(f"[{i+1}/{total}] {name} error: {str(e)[:60]}")
+
+        # Emit this product's result immediately so frontend can show it
+        evt_payload = {
+            "product_name": name,
+            "price": price,
+            "slug": slug,
+            "image_prompt": image_prompt,
+            "video_prompt": video_prompt,
+            "product": {"name": name, "price": price, "slug": slug},
+        }
+        if image_url:
+            evt_payload["image_url"] = image_url
+        if local_path:
+            fn = Path(local_path).name
+            evt_payload["generated_image_url"] = f"/api/generated/{quote(fn)}"
+        _emit(jid, "image_ready", f"{name} ready", evt_payload)
+
+    _emit(jid, "done", f"Done! Generated {generated}/{total} products.", {
+        "reply": f"Generated {generated} of {total} products.",
+        "multi": True,
+    })
 
 
 def _process_request(jid: str, data: dict):

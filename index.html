@@ -551,6 +551,14 @@
   }
   .cat-badge.cached { background: rgba(37,211,102,0.15); color: var(--accent); }
   .cat-badge.no-img { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .cat-item.selected { background: rgba(37,211,102,0.08); border-left: 3px solid var(--accent); }
+  .cat-item.selected .cat-name { color: #25d366; }
+  .cat-check { width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent;transition:all .15s; }
+  .cat-item.selected .cat-check { background:#25d366;border-color:#25d366;color:#fff; }
+  .cat-generate-bar { position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 16px;display:none; }
+  .cat-generate-bar.visible { display:block; }
+  .cat-gen-btn { width:100%;background:#25d366;color:#111;border:none;border-radius:12px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s; }
+  .cat-gen-btn:active { opacity:.8; }
 
   .cat-img-placeholder {
     width: 56px; height: 56px;
@@ -1491,6 +1499,9 @@
   </div>
   <div class="catalogue-count" id="catCount">Loading...</div>
   <div class="catalogue-list" id="catList"></div>
+  <div class="cat-generate-bar" id="catGenerateBar">
+    <button class="cat-gen-btn" id="catGenBtn" onclick="generateSelected()">Generate 0 Products</button>
+  </div>
 </div>
 
 <!-- ===== SETTINGS MODAL ===== -->
@@ -1526,7 +1537,8 @@
 // ============================================================
 // STATE
 // ============================================================
-let selectedProduct = null;  // { name, price, slug, image_url, ... }
+let selectedProduct = null;   // single product (legacy, kept for single select)
+let selectedProducts = [];    // multi-select array
 let pendingScene = null;     // { base64, dataUrl, filename }
 let isWaiting = false;
 let catalogueData = [];
@@ -1640,8 +1652,10 @@ function renderCatalogue(items) {
 
   items.forEach(p => {
     const div = document.createElement('div');
-    div.className = 'cat-item';
-    div.onclick = () => selectProduct(p);
+    const isSelected = selectedProducts.some(s => s.name === p.name);
+    div.className = 'cat-item' + (isSelected ? ' selected' : '');
+    div.dataset.slug = p.slug || p.name;
+    div.onclick = () => toggleProductSelection(p, div);
 
     let imgHtml;
     if (p.image_url && base) {
@@ -1661,6 +1675,7 @@ function renderCatalogue(items) {
         ${p.old_name ? `<div class="cat-old-name">aka: ${esc(p.old_name)}</div>` : ''}
         <div class="cat-meta">R${p.price} ${badges}</div>
       </div>
+      <div class="cat-check">&#x2713;</div>
     `;
     list.appendChild(div);
   });
@@ -1687,6 +1702,7 @@ function openCatalogue() {
   document.getElementById('catOverlay').classList.add('active');
   document.getElementById('catDrawer').classList.add('active');
   document.getElementById('catSearch').value = '';
+  document.getElementById('catGenerateBar').classList.remove('visible');
   if (catalogueData.length) renderCatalogue(catalogueData);
   setTimeout(() => document.getElementById('catSearch').focus(), 300);
 }
@@ -1696,29 +1712,66 @@ function closeCatalogue() {
   document.getElementById('catDrawer').classList.remove('active');
 }
 
-function selectProduct(p) {
-  selectedProduct = p;
+function toggleProductSelection(p, div) {
+  const idx = selectedProducts.findIndex(s => s.name === p.name);
+  if (idx >= 0) {
+    selectedProducts.splice(idx, 1);
+    div.classList.remove('selected');
+  } else {
+    selectedProducts.push(p);
+    div.classList.add('selected');
+  }
+  updateCatGenerateBar();
+}
+
+function updateCatGenerateBar() {
+  const bar = document.getElementById('catGenerateBar');
+  const btn = document.getElementById('catGenBtn');
+  if (selectedProducts.length > 0) {
+    bar.classList.add('visible');
+    btn.textContent = selectedProducts.length === 1
+      ? `Generate Image for ${selectedProducts[0].name}`
+      : `Generate ${selectedProducts.length} Products`;
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function generateSelected() {
+  if (!selectedProducts.length) return;
+  // Copy to local, close drawer, populate product bar, send
+  const products = [...selectedProducts];
+  closeCatalogue();
+  selectedProduct = products[0];
   const base = localStorage.getItem('cws_server_base') || '';
   const bar = document.getElementById('productBar');
   const img = document.getElementById('productBarImg');
-  const name = document.getElementById('productBarName');
-  const price = document.getElementById('productBarPrice');
-
-  name.textContent = p.name;
-  price.textContent = `R${p.price}`;
-  if (p.image_url && base) {
-    img.src = base + p.image_url;
-    img.style.display = '';
+  const namEl = document.getElementById('productBarName');
+  const priceEl = document.getElementById('productBarPrice');
+  if (products.length === 1) {
+    namEl.textContent = products[0].name;
+    priceEl.textContent = `R${products[0].price}`;
+    if (products[0].image_url && base) { img.src = base + products[0].image_url; img.style.display = ''; }
+    else img.style.display = 'none';
   } else {
+    namEl.textContent = `${products.length} products selected`;
+    priceEl.textContent = products.map(p => p.name.split(' ')[0]).join(', ');
     img.style.display = 'none';
   }
   bar.classList.add('active');
-  closeCatalogue();
   document.getElementById('msgInput').focus();
+}
+
+function selectProduct(p) {
+  // Legacy single-select — kept for backwards compat
+  selectedProducts = [p];
+  selectedProduct = p;
+  generateSelected();
 }
 
 function clearSelectedProduct() {
   selectedProduct = null;
+  selectedProducts = [];
   document.getElementById('productBar').classList.remove('active');
 }
 
@@ -2030,8 +2083,10 @@ async function sendMessage() {
 
   // Build display text
   let displayText = text;
-  if (selectedProduct && !text) {
-    displayText = `Generate promo image for: ${selectedProduct.name}`;
+  if (selectedProducts.length && !text) {
+    displayText = selectedProducts.length === 1
+      ? `Generate promo image for: ${selectedProducts[0].name}`
+      : `Generate ${selectedProducts.length} products: ${selectedProducts.map(p => p.name).join(', ')}`;
   }
 
   // Show sent message
@@ -2048,11 +2103,12 @@ async function sendMessage() {
     business_id: settings.businessId,
     message: {
       type: pendingScene ? 'image' : 'text',
-      text: text || (selectedProduct ? `Create promo for ${selectedProduct.name}` : ''),
+      text: text || (selectedProducts.length ? `Create promo for ${selectedProducts.map(p => p.name).join(', ')}` : ''),
     },
   };
 
-  if (selectedProduct) payload.selected_product = selectedProduct.name;
+  if (selectedProducts.length === 1) payload.selected_product = selectedProducts[0].name;
+  if (selectedProducts.length > 1) payload.selected_products = selectedProducts.map(p => p.name);
   if (pendingScene) {
     payload.scene_description = text || 'Custom scene from uploaded reference image';
     payload.message.image = { base64: pendingScene.base64, filename: pendingScene.filename, mime_type: pendingScene.type };
@@ -2063,6 +2119,7 @@ async function sendMessage() {
   autoResize(input);
   removeScene();
   clearSelectedProduct();
+  selectedProducts = [];
 
   isWaiting = true;
   document.getElementById('sendBtn').disabled = true;
@@ -2129,6 +2186,15 @@ async function sendMessage() {
               }
             }, 300);
           }
+        } else if (evt.type === 'image_ready') {
+          // One product from a multi-product batch — show it immediately in chat
+          const base = settings.serverBase;
+          let imgUrl = null;
+          if (evt.generated_image_url && base) imgUrl = base + evt.generated_image_url;
+          else if (evt.image_url) imgUrl = evt.image_url;
+          const label = `*${evt.product_name}* (R${evt.price || '?'})`;
+          const promptHtml = buildPromptHtml(evt.image_prompt, evt.video_prompt);
+          addMessage(label, 'received', imgUrl, promptHtml);
         } else if (evt.type === 'error') {
           if (pollTimer) clearInterval(pollTimer);
           errorProgressBubble(bubbleUid, evt.message);
