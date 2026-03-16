@@ -1420,20 +1420,49 @@ Extract everything you can find and return ONLY a JSON object with these fields 
 
 If the document is a product image, extract the product name, packaging description, and any visible text from the label."""
 
+    # For PDFs: extract text and send as text content (vision API doesn't accept PDFs)
+    is_pdf = mime_type == "application/pdf" or file_name.lower().endswith(".pdf")
+    user_content = []
+
+    if is_pdf:
+        try:
+            import pypdf, io
+            pdf_bytes = base64.b64decode(b64_data)
+            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+            pages_text = []
+            for i, page in enumerate(reader.pages):
+                text = page.extract_text() or ""
+                if text.strip():
+                    pages_text.append(f"--- Page {i+1} ---\n{text.strip()}")
+            extracted_text = "\n\n".join(pages_text) if pages_text else ""
+            if not extracted_text.strip():
+                # PDF has no extractable text (e.g. scanned/image-only) — fall back to image
+                is_pdf = False
+                print(f"  [Brand Analyser] PDF has no text layer — falling back to image vision for {file_name}")
+            else:
+                print(f"  [Brand Analyser] PDF text extracted: {len(extracted_text)} chars across {len(reader.pages)} pages")
+                user_content = [{"type": "text", "text": (
+                    f"Analyse this brand document ({file_name}). "
+                    f"Extracted text from the PDF:\n\n{extracted_text[:8000]}"
+                )}]
+        except Exception as e:
+            print(f"  [Brand Analyser] PDF extraction error: {e} — falling back to image vision")
+            is_pdf = False
+
+    if not is_pdf:
+        user_content = [
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:{mime_type};base64,{b64_data}"}
+            },
+            {"type": "text", "text": f"Analyse this brand document/image ({file_name}) and extract all business profile data you can find."},
+        ]
+
     payload = {
         "model": SCENE_ANALYSIS_MODEL,
         "messages": [
             {"role": "system", "content": BRAND_ANALYSIS_SYSTEM},
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:{mime_type};base64,{b64_data}"}
-                    },
-                    {"type": "text", "text": f"Analyse this brand document/image ({file_name}) and extract all business profile data you can find."},
-                ],
-            },
+            {"role": "user", "content": user_content},
         ],
         "max_tokens": 1200,
         "temperature": 0.2,
