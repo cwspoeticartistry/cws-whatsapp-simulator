@@ -366,6 +366,16 @@ _LABEL_VERSION_PRODUCTS = {
     "Blood Purifying":    ("Blood Purifying",    "Herbal Vitality Blend 2"),
 }
 
+# Display names used in prompts — strips internal version suffixes so AI doesn't render "2" on labels
+_PROMPT_DISPLAY_NAMES = {
+    "Herbal Vitality & Flow Support 2": "Herbal Vitality & Flow Support",
+    "Herbal Vitality Blend 2":          "Herbal Vitality Blend",
+}
+
+def _prompt_name(name: str) -> str:
+    """Return the display name to use inside image/video prompts (strips internal version suffixes)."""
+    return _PROMPT_DISPLAY_NAMES.get(name, name)
+
 # Positive feedback keywords
 _FEEDBACK_POSITIVE = {
     "yes", "happy", "looks good", "perfect", "great", "love it",
@@ -451,7 +461,7 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img
                  When present, produces a far more precise Layer 1 than plain scene_desc text.
     scene_desc:  fallback plain-text description when no brief is available.
     """
-    name = product["name"]
+    name = _prompt_name(product["name"])   # strip internal version suffixes (e.g. "2") from prompt text
     price = product.get("price", 0)
     description = product.get("description", "")
 
@@ -530,6 +540,13 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img
         "white specular highlights, colored background reflections — that must be "
         "completely removed and replaced with scene-appropriate lighting. This is a "
         "full environment relighting, not just a background swap.\n\n"
+        "NO ADDITIONS TO LABELS OR PACKAGING — CRITICAL: Do NOT add any illustrations, "
+        "icons, leaf motifs, herb graphics, decorative symbols, ornaments, or any "
+        "embellishment to the product labels or packaging that are not physically "
+        "visible in the attached reference product images. Do NOT render any version "
+        "numbers, numerals, or suffixes on labels that do not appear in the reference "
+        "photo. The label and packaging must be reproduced with absolute fidelity — "
+        "nothing added, nothing removed, nothing re-styled.\n\n"
         "SPECULAR HIGHLIGHTS AND REFLECTIONS — CRITICAL: Any bright white or "
         "studio-colored specular highlight currently visible on the product must be "
         "eliminated. Replace all specular highlights with colors from the actual scene "
@@ -633,7 +650,7 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img
 
 
 def assemble_video_prompt(product, cache_entry=None, scene_desc="premium wellness setting", img_file=None, scene_brief=None):
-    name = product["name"]
+    name = _prompt_name(product["name"])
 
     # Build per-product locked elements from cache if available
     if cache_entry:
@@ -699,6 +716,87 @@ def assemble_video_prompt(product, cache_entry=None, scene_desc="premium wellnes
         f"colour grade changes — match the tone of the source image exactly.\n\n"
         f"Duration: 7 seconds. Aspect ratio: 3:4 portrait. Photorealistic. Zero text "
         f"overlays of any kind."
+    )
+
+
+import random as _random
+
+def assemble_group_video_prompt(products: list, scene_brief: dict | None = None, scene_desc: str = "premium wellness setting") -> str:
+    """Build a video prompt for a group shot — subtle camera move + optional blurred background person."""
+    names_str = ", ".join(_prompt_name(p["name"]) for p in products)
+    scene_context = (scene_brief.get("scene_prompt", scene_desc) if scene_brief else scene_desc)
+    lighting = (scene_brief.get("lighting", "") if scene_brief else "")
+    atmosphere = (scene_brief.get("atmosphere", "") if scene_brief else "")
+
+    # Randomly vary the background person interaction (or omit entirely ~25% of the time)
+    _interactions = [
+        (
+            "A Black South African woman, 28-35, natural hair, warm neutral clothing, "
+            "walks slowly through the background from left to right — or right to left — "
+            "at the far rear of the scene. She is ALWAYS in heavy bokeh blur, never sharp. "
+            "She pauses briefly mid-frame, glances softly toward the products, then continues out of frame. "
+            "Her movement is slow and graceful."
+        ),
+        (
+            "A Black South African woman, 28-35, natural hair, warm neutral clothing, "
+            "is partially visible in the background — she reaches toward an object on a shelf or counter "
+            "behind the products, picks it up gently, and replaces it. "
+            "She is ALWAYS in heavy bokeh blur, never in focus. "
+            "She stays fully behind the products and never obscures any label."
+        ),
+        (
+            "A Black South African man, 30-40, clean casual attire, "
+            "briefly enters the background from the right, pours or sets down a glass, "
+            "then moves off-frame again. "
+            "He is ALWAYS in heavy bokeh blur — never sharp. "
+            "He remains well behind the products at all times."
+        ),
+        None,  # no person — pure scene animation
+    ]
+    person_action = _random.choice(_interactions)
+
+    person_block = (
+        f"BACKGROUND PERSON: {person_action}\n"
+        f"The person must NEVER be in focus at any point — maintain consistent heavy blur throughout. "
+        f"They must never overlap or obscure any product, any label, or any packaging detail. "
+        f"They occupy no more than 20% of the frame and remain in the background only.\n\n"
+        if person_action else
+        "BACKGROUND: No person — the scene animates naturally with the camera movement only.\n\n"
+    )
+
+    # Subtle camera movement
+    _camera_moves = [
+        "An extremely slow push-in — no more than 5% closer over the full 7 seconds.",
+        "An extremely slow pull-back — starting slightly closer, easing back no more than 5% over 7 seconds.",
+        "A barely perceptible slow pan left-to-right across the product group — no more than 3% horizontal drift.",
+    ]
+    camera_move = _random.choice(_camera_moves)
+
+    locked_products = "\n".join(
+        f"- {_prompt_name(p['name'])}: all label text, logo, ornamental scrollwork, cap color, and packaging details must match the attached source images exactly."
+        for p in products
+    )
+
+    return (
+        f"The attached image is the ABSOLUTE GROUND TRUTH for this video. Every element in it must be "
+        f"reproduced identically in every frame. The source image contains NO text overlays — do not add any.\n\n"
+        f"LOCKED ELEMENTS — must not change in any frame:\n\n"
+        f"PRODUCTS:\n{locked_products}\n"
+        f"All bottle shapes, sizes, label backgrounds, logo ornaments, cap colors, and packaging details must "
+        f"match the source image exactly. NO additions to labels — no illustrations, icons, leaf graphics, "
+        f"numerals, or decorative elements not present in the reference images.\n\n"
+        f"TEXT RULE: Do NOT add, generate, render, or invent any text, words, numbers, captions, subtitles, "
+        f"watermarks, or typography anywhere in this video. The ONLY readable text is what is physically printed "
+        f"on the product labels.\n\n"
+        f"SCENE: {len(products)} Dr Gee products grouped together in — {scene_context}. "
+        f"{'Lighting: ' + lighting + '. ' if lighting else ''}"
+        f"{'Atmosphere: ' + atmosphere + '. ' if atmosphere else ''}"
+        f"Scene composition, surface, props, and all background elements remain unchanged throughout.\n\n"
+        f"The FIRST FRAME must be an exact photographic match of the attached source image.\n\n"
+        f"{person_block}"
+        f"CAMERA: {camera_move} No cuts. No camera shake. Lighting holds constant. "
+        f"Colour grade matches the source image tone exactly.\n\n"
+        f"Duration: 7 seconds. Aspect ratio: 3:4 portrait. Photorealistic. Zero text overlays of any kind."
     )
 
 
@@ -1187,7 +1285,7 @@ def _run_group_chat_job(jid: str, data: dict, product_names: list):
         _emit(jid, "error", "Could not find any of the requested products.")
         return
 
-    names_str = ", ".join(p["name"] for p in products)
+    names_str = ", ".join(_prompt_name(p["name"]) for p in products)
     progress(f"Building group shot prompt for: {names_str}")
 
     # Analyse scene
@@ -1227,7 +1325,8 @@ def _run_group_chat_job(jid: str, data: dict, product_names: list):
     for p in products:
         cache_entry = cache.get(re.sub(r"[^a-z0-9]+", "-", p["name"].lower()).strip("-"))
         desc = (cache_entry.get("visual_description", "") if cache_entry else "") or p.get("description", "")
-        product_descs.append(f"- {p['name']}: {desc[:200]}" if desc else f"- {p['name']}")
+        display = _prompt_name(p["name"])
+        product_descs.append(f"- {display}: {desc[:200]}" if desc else f"- {display}")
 
     products_block = "\n".join(product_descs)
     layer2 = (
@@ -1247,7 +1346,12 @@ def _run_group_chat_job(jid: str, data: dict, product_names: list):
         "scenes (wood, afternoon light) = warm amber/golden highlights on all white plastic caps and surfaces — "
         "NEVER blue or cool-white. Applying blue or cool-toned studio highlights in a warm scene is a critical "
         "compositing error that makes products look pasted-in. Every surface that catches light must carry the "
-        "scene's warm or cool hue consistently across all products."
+        "scene's warm or cool hue consistently across all products.\n\n"
+        "NO ADDITIONS TO LABELS OR PACKAGING — CRITICAL: Do NOT add any illustrations, icons, leaf motifs, herb "
+        "graphics, decorative symbols, ornaments, or any embellishment to the product labels or packaging that are "
+        "not physically visible in the attached reference product images. Do NOT render any version numbers, "
+        "numerals, or suffixes on labels that do not appear in the reference photo. Every label must be "
+        "reproduced with absolute fidelity — nothing added, nothing removed, nothing re-styled."
     )
 
     # Layer 3: composition
@@ -1277,10 +1381,13 @@ def _run_group_chat_job(jid: str, data: dict, product_names: list):
         local_path = result.get("local_path")
         image_url  = result.get("image_url")
 
+        group_video_prompt = assemble_group_video_prompt(products, scene_brief=scene_brief, scene_desc=scene_description or "premium wellness setting")
+
         evt_payload = {
             "product_name": names_str,
             "slug": group_slug,
             "image_prompt": full_prompt,
+            "video_prompt": group_video_prompt,
             "product": {"name": names_str, "slug": group_slug},
         }
         if image_url:
