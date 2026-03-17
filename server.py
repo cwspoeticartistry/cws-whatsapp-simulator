@@ -198,6 +198,9 @@ IMAGE_MAP = {
     "Man's Soup": "Men's Herbal Soup Blend - Man's Soup.psd.png",
     "Ulcer Solution": "Ulcer Solution - Herbal Comfort Blend.psd.png",
     "Ulcer Solutions": "Ulcer Solutions.psd.png",
+    "Herbal Vitality & Flow Support 2": "Herbal Vitality & Flow Support - Blood Circulation 2.png",
+    "Herbal Vitality Blend 2": "Herbal Vitality Blend - Blood Purification 2.png",
+    "Corrective for Women": "Women's Wellness Herbal Tonic -Corrective for Women.png",
     "Blood Combo": "Blood Combo.png",
     "Bones & Joint Combo": "Bones & Joint Combo.png",
     "Detox, Bones and Joints Combo": "Detox, Bones and Joints Combo.png",
@@ -355,6 +358,13 @@ _INDIVIDUAL_KWS = [
     "one for each", "one each", "per product", "individual image",
     "individual promo", "separate image",
 ]
+
+# Products with multiple label versions — ask user to choose before generating
+# Maps base product name → (v1 name, v2 name)
+_LABEL_VERSION_PRODUCTS = {
+    "Blood Circulations": ("Blood Circulations", "Herbal Vitality & Flow Support 2"),
+    "Blood Purifying":    ("Blood Purifying",    "Herbal Vitality Blend 2"),
+}
 
 # Positive feedback keywords
 _FEEDBACK_POSITIVE = {
@@ -530,6 +540,15 @@ def assemble_prompt(product, cache_entry=None, extras=None, scene_desc=None, img
         "SHADOW AND AMBIENT OCCLUSION: Cast soft natural shadows in the direction of "
         "the scene's light source. Add contact shadow where the product meets any "
         "surface. The scene's ambient light should wrap softly around the product.\n\n"
+        "SCENE COLOR TEMPERATURE — CRITICAL: The color of specular highlights, ambient "
+        "wrap light, and surface reflections on ALL product surfaces must match the "
+        "scene's color temperature EXACTLY. If the scene is warm (golden hour, rustic "
+        "wood, candlelight, afternoon sun) then ALL highlights on white plastic, glass, "
+        "and caps must be warm amber/golden — NEVER cool-white or blue. If the scene is "
+        "cool or neutral, match that instead. Applying blue or cool-toned studio "
+        "highlights to products in a warm scene is a critical compositing error — it "
+        "makes the product look pasted-in and must be completely avoided. Every surface "
+        "that catches light must reflect the scene's dominant warm or cool hue.\n\n"
         "AMBER GLASS BOTTLE TRANSLUCENCY — CRITICAL: Amber/dark glass bottles "
         "(dropper bottles, tincture bottles, spray bottles with amber glass bodies) "
         "are SEMI-TRANSPARENT — NOT solid opaque plastic. Light passes through amber "
@@ -993,8 +1012,30 @@ def webhook():
                 )
             })
 
-        # --- Feedback loop: awaiting a response after a generation ---
+        # --- Label version reply (e.g. "1", "old", "2", "new") ---
         session = _get_session(sender)
+        if session.get("pending_version_product") and msg_text:
+            t_reply = msg_text.lower().strip()
+            base = session["pending_version_product"]
+            orig_data = session["pending_version_data"]
+            v1_name, v2_name = _LABEL_VERSION_PRODUCTS[base]
+            chosen = None
+            if t_reply in ("1", "old", "v1", "old label", "first"):
+                chosen = v1_name
+            elif t_reply in ("2", "new", "v2", "new label", "second"):
+                chosen = v2_name
+            if chosen:
+                _clear_session(sender, "pending_version_product", "pending_version_data")
+                # Swap the product name in the original request data so _process_request uses the right one
+                orig_data = dict(orig_data)
+                orig_data["_override_product_name"] = chosen
+                jid, _ = _new_job()
+                threading.Thread(target=_process_request, args=(jid, orig_data), daemon=True).start()
+                return jsonify({"job_id": jid})
+            else:
+                return jsonify({"reply": "Please reply *1* (old label) or *2* (new label)."})
+
+        # --- Feedback loop: awaiting a response after a generation ---
         if session.get("awaiting_feedback") and msg_text:
             jid, _ = _new_job()
             threading.Thread(
@@ -1086,7 +1127,18 @@ def webhook():
                 "Try typing the full product name, or tap the catalogue button to browse all 45 products."
             )})
 
-        # intent == _INTENT_SINGLE — proceed with generation
+        # intent == _INTENT_SINGLE — check for label version ambiguity before generating
+        if matched and matched[0]["name"] in _LABEL_VERSION_PRODUCTS and not has_scene:
+            base = matched[0]["name"]
+            v1_name, v2_name = _LABEL_VERSION_PRODUCTS[base]
+            _set_session(sender, {"pending_version_product": base, "pending_version_data": data})
+            return jsonify({"reply": (
+                f"*{base}* has two label versions — which would you like?\n\n"
+                f"  1️⃣  *Old label* — \"{v1_name.replace('Blood Circulations','Blood Circulation')}\"\n"
+                f"  2️⃣  *New label* — \"{v2_name}\"\n\n"
+                "Reply *1* or *old*, or *2* or *new*."
+            )})
+
         jid, _ = _new_job()
         threading.Thread(target=_process_request, args=(jid, data), daemon=True).start()
         return jsonify({"job_id": jid})
@@ -1189,7 +1241,13 @@ def _run_group_chat_job(jid: str, data: dict, product_names: list):
         "ORIGINAL BACKGROUND REMOVAL — CRITICAL: Each product image was photographed against a plain studio "
         "backdrop. That backdrop must be COMPLETELY REMOVED. Place only the physical products into the scene.\n\n"
         "SEAMLESS SCENE INTEGRATION: Fully relight each product to match the scene — remove all studio rim lights, "
-        "white specular highlights, and colored background reflections. Replace with scene-appropriate lighting."
+        "white specular highlights, and colored background reflections. Replace with scene-appropriate lighting.\n\n"
+        "SCENE COLOR TEMPERATURE — CRITICAL: The color of specular highlights, ambient wrap light, and surface "
+        "reflections on ALL product surfaces must match the scene's exact color temperature. Warm rustic/golden "
+        "scenes (wood, afternoon light) = warm amber/golden highlights on all white plastic caps and surfaces — "
+        "NEVER blue or cool-white. Applying blue or cool-toned studio highlights in a warm scene is a critical "
+        "compositing error that makes products look pasted-in. Every surface that catches light must carry the "
+        "scene's warm or cool hue consistently across all products."
     )
 
     # Layer 3: composition
@@ -1352,12 +1410,20 @@ def _process_request(jid: str, data: dict):
         sender = data.get("sender", {}).get("name", "User")
         selected_product = data.get("selected_product", None)
         scene_description = data.get("scene_description", None)
+        override_name = data.get("_override_product_name", None)
 
         progress("Received your request — looking up product...")
 
-        # Find product
+        # Find product — override_name wins (set by label version choice), then selected_product, then text match
         product = None
-        if selected_product:
+        if override_name:
+            for p in catalogue:
+                if p["name"] == override_name:
+                    product = p
+                    break
+            if not product:
+                product = find_product(override_name, catalogue)
+        if not product and selected_product:
             for p in catalogue:
                 if p["name"] == selected_product:
                     product = p
