@@ -301,27 +301,60 @@ def find_product(text, catalogue):
     return best_match
 
 
+_STOP_WORDS = {"and", "or", "the", "a", "of", "for", "with", "in", "to", "by", "at"}
+
 def find_all_products(text: str, cat: list) -> list:
-    """Return every product whose name OR product_line appears in text (case-insensitive)."""
+    """Return every product whose name OR product_line appears in text (case-insensitive).
+    Matching strategies (any one sufficient):
+      1. Exact substring: product name in text
+      2. Product_line substring (with parenthetical suffix stripped)
+      3. Word-overlap >= 75% for names/lines with 3+ significant words
+    """
     t = text.lower()
+    t_words = set(re.findall(r"\w+", t)) - _STOP_WORDS
     found = []
     seen = set()
     for p in cat:
         name = p["name"].lower()
         pl = (p.get("product_line") or "").lower()
-        if name in t or (len(pl) > 5 and pl in t):
-            if p["name"] not in seen:
-                found.append(p)
-                seen.add(p["name"])
+        # Strip parenthetical suffixes like "(Capsules)", "(Powder)" for cleaner matching
+        pl_clean = re.sub(r"\s*\([^)]*\)", "", pl).strip()
+
+        # Strategy 1 & 2: substring match
+        matched = (
+            name in t
+            or (len(pl_clean) > 5 and pl_clean in t)
+            or (len(pl) > 5 and pl in t)
+        )
+
+        # Strategy 3: word-overlap for multi-word names (catches word-order variants)
+        if not matched:
+            name_words = set(re.findall(r"\w+", name)) - _STOP_WORDS
+            if len(name_words) >= 3:
+                overlap = len(name_words & t_words)
+                if overlap / len(name_words) >= 0.75:
+                    matched = True
+
+        if matched and p["name"] not in seen:
+            found.append(p)
+            seen.add(p["name"])
     return found
 
 
 # Intent constants
-_INTENT_SINGLE    = "single"
-_INTENT_MULTI     = "multi"
-_INTENT_CATALOGUE = "catalogue"
-_INTENT_BRAND     = "brand"
-_INTENT_AMBIGUOUS = "ambiguous"
+_INTENT_SINGLE       = "single"
+_INTENT_MULTI        = "multi"        # multiple products → separate images
+_INTENT_MULTI_GROUP  = "multi_group"  # multiple products → ONE group image
+_INTENT_CATALOGUE    = "catalogue"
+_INTENT_BRAND        = "brand"
+_INTENT_AMBIGUOUS    = "ambiguous"
+
+# Keywords that signal the user wants SEPARATE images per product
+_INDIVIDUAL_KWS = [
+    "individually", "each one", "each product", "separate", "one per",
+    "one for each", "one each", "per product", "individual image",
+    "individual promo", "separate image",
+]
 
 # Positive feedback keywords
 _FEEDBACK_POSITIVE = {
@@ -358,7 +391,11 @@ def classify_intent(msg_text: str, cat: list) -> dict:
     if len(matched) == 1:
         return {"intent": _INTENT_SINGLE, "products": matched}
     if len(matched) > 1:
-        return {"intent": _INTENT_MULTI, "products": matched}
+        # Default: group shot (one image with all products)
+        # Only split into separate images if explicitly requested
+        wants_individual = any(kw in t for kw in _INDIVIDUAL_KWS)
+        intent = _INTENT_MULTI if wants_individual else _INTENT_MULTI_GROUP
+        return {"intent": intent, "products": matched}
 
     # Try fuzzy single match
     fuzzy = find_product(t, cat)
@@ -896,6 +933,9 @@ def build_enriched_catalogue():
 
 enriched_catalogue = build_enriched_catalogue()
 
+_debug_msg = 'please replace the products in the reference image with Herbal Vitality & Flow Support, Herbal Vitality Blend, detox and advanced liver kidney and bladder syrup without changing anything else'
+_debug_found = find_all_products(_debug_msg, catalogue)
+print(f"\n[CWS DEBUG] find_all_products test: {[p['name'] for p in _debug_found]}")
 print(f"\n[CWS Server] Loaded {len(catalogue)} products from catalogue")
 print(f"[CWS Server] Loaded {len(cache)} cached product descriptions")
 print(f"[CWS Server] {sum(1 for p in enriched_catalogue if p['image_file'])} products have images")
@@ -970,13 +1010,24 @@ def webhook():
             selected_products = [selected_product]
 
         if len(selected_products) > 1:
+            # Catalogue browser selection — check if message text requests individual images
+            sel_text = (data.get("message", {}).get("text", "") or "").lower()
+            wants_individual = any(kw in sel_text for kw in _INDIVIDUAL_KWS)
             jid, _ = _new_job()
-            threading.Thread(
-                target=_run_multi_product_chat_job,
-                args=(jid, data, selected_products),
-                daemon=True,
-            ).start()
-            return jsonify({"job_id": jid, "multi": True, "count": len(selected_products)})
+            if wants_individual:
+                threading.Thread(
+                    target=_run_multi_product_chat_job,
+                    args=(jid, data, selected_products),
+                    daemon=True,
+                ).start()
+                return jsonify({"job_id": jid, "multi": True, "count": len(selected_products)})
+            else:
+                threading.Thread(
+                    target=_run_group_chat_job,
+                    args=(jid, data, selected_products),
+                    daemon=True,
+                ).start()
+                return jsonify({"job_id": jid, "multi": False, "group": True, "count": len(selected_products)})
 
         if selected_products:
             jid, _ = _new_job()
@@ -986,12 +1037,17 @@ def webhook():
         if not msg_text:
             return jsonify({"reply": "Please tell me which product you'd like, or use the catalogue to select one."})
 
+        # If user uploaded a reference scene image, skip catalogue/brand intents —
+        # the message is always a generation request with the scene context.
+        has_scene = bool(data.get("scene_description") or data.get("message", {}).get("image"))
+
         # --- Intent classification ---
         intent_result = classify_intent(msg_text, catalogue)
         intent  = intent_result["intent"]
         matched = intent_result["products"]
+        print(f"[webhook] intent={intent} has_scene={has_scene} matched={[p['name'] for p in matched]} msg={msg_text[:80]!r}", flush=True)
 
-        if intent == _INTENT_CATALOGUE:
+        if intent == _INTENT_CATALOGUE and not has_scene:
             product_list = "\n".join([f"  - {p['name']} (R{p.get('price', '?')})" for p in catalogue])
             return jsonify({"reply": f"Dr Gee Product Catalogue:\n\n{product_list}"})
 
@@ -1004,8 +1060,18 @@ def webhook():
                 "Aesthetic: Premium herbal wellness — dark, gold, authoritative yet natural."
             )})
 
+        if intent == _INTENT_MULTI_GROUP:
+            # One image with all products grouped together
+            jid, _ = _new_job()
+            threading.Thread(
+                target=_run_group_chat_job,
+                args=(jid, data, [p["name"] for p in matched]),
+                daemon=True,
+            ).start()
+            return jsonify({"job_id": jid, "multi": False, "group": True, "count": len(matched)})
+
         if intent == _INTENT_MULTI:
-            # Generate all matched products in a single batch job
+            # Separate image per product (explicit request)
             jid, _ = _new_job()
             threading.Thread(
                 target=_run_multi_product_chat_job,
@@ -1014,7 +1080,7 @@ def webhook():
             ).start()
             return jsonify({"job_id": jid, "multi": True, "count": len(matched)})
 
-        if intent == _INTENT_AMBIGUOUS:
+        if intent == _INTENT_AMBIGUOUS and not has_scene:
             return jsonify({"reply": (
                 "I'm not sure which product you mean. Could you be more specific?\n\n"
                 "Try typing the full product name, or tap the catalogue button to browse all 45 products."
@@ -1028,6 +1094,152 @@ def webhook():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"reply": f"Server error: {str(e)}"}), 500
+
+
+def _run_group_chat_job(jid: str, data: dict, product_names: list):
+    """Background thread — generates ONE image with ALL listed products arranged together in the scene."""
+    def progress(msg):
+        _emit(jid, "step", msg)
+
+    try:
+        from generate_social_image import generate_social_image
+    except ImportError as e:
+        _emit(jid, "error", f"Cannot import generate_social_image: {e}")
+        return
+
+    scene_description = data.get("scene_description")
+    scene_b64   = (data.get("message", {}).get("image") or {}).get("base64")
+    scene_mime  = (data.get("message", {}).get("image") or {}).get("mime_type", "image/jpeg")
+    scene_filename = (data.get("message", {}).get("image") or {}).get("filename", "scene.jpg")
+
+    # Resolve products and their image files
+    products = []
+    img_files = []
+    for name in product_names:
+        p = next((x for x in catalogue if x["name"] == name), None)
+        if not p:
+            p = find_product(name, catalogue)
+        if p:
+            products.append(p)
+            slug = re.sub(r"[^a-z0-9]+", "-", p["name"].lower()).strip("-")
+            img_file = next(
+                (f.name for f in PRODUCTS_DIR.glob("*.png")
+                 if p["name"].lower() in f.stem.lower() or
+                    (p.get("product_line") or "").lower() in f.stem.lower()),
+                None
+            )
+            if img_file:
+                img_files.append(str(PRODUCTS_DIR / img_file))
+
+    if not products:
+        _emit(jid, "error", "Could not find any of the requested products.")
+        return
+
+    names_str = ", ".join(p["name"] for p in products)
+    progress(f"Building group shot prompt for: {names_str}")
+
+    # Analyse scene
+    scene_brief = None
+    if scene_b64:
+        progress("Analysing reference scene...")
+        scene_brief = analyze_scene_image(scene_b64, scene_mime, f"arrange all these products in this scene: {names_str}")
+
+    # Build a combined group prompt
+    # Layer 1: scene (same as assemble_prompt)
+    if scene_brief:
+        keep   = scene_brief.get("keep", "")
+        change = scene_brief.get("change", "")
+        scene_prompt = scene_brief.get("scene_prompt", "")
+        lighting = scene_brief.get("lighting", "")
+        surfaces = scene_brief.get("surfaces", "")
+        atmosphere = scene_brief.get("atmosphere", "")
+        layer1 = (
+            "IMAGE 1 (FIRST ATTACHED IMAGE) IS THE SCENE/STYLE REFERENCE — a real photograph.\n\n"
+            f"SCENE ENVIRONMENT: {scene_prompt}\n\n"
+            f"LIGHTING: {lighting}. SURFACES: {surfaces}. ATMOSPHERE: {atmosphere}.\n\n"
+            f"PRESERVE EXACTLY: {keep}. CHANGE ONLY: Replace the existing products with the new Dr Gee products listed below.\n\n"
+            "Replicate every environmental detail of this reference photograph with photographic accuracy. "
+            "Do NOT invent a new background — rebuild this exact scene."
+        )
+    elif scene_description:
+        layer1 = (
+            "IMAGE 1 (FIRST ATTACHED IMAGE) IS THE SCENE/STYLE REFERENCE. "
+            "Replicate its background, lighting, surfaces, atmosphere, and props EXACTLY. "
+            "Replace only the products — everything else stays identical."
+        )
+    else:
+        layer1 = DEFAULT_STYLE
+
+    # Layer 2: group product instructions
+    product_descs = []
+    for p in products:
+        cache_entry = cache.get(re.sub(r"[^a-z0-9]+", "-", p["name"].lower()).strip("-"))
+        desc = (cache_entry.get("visual_description", "") if cache_entry else "") or p.get("description", "")
+        product_descs.append(f"- {p['name']}: {desc[:200]}" if desc else f"- {p['name']}")
+
+    products_block = "\n".join(product_descs)
+    layer2 = (
+        f"REMAINING ATTACHED IMAGES ARE THE {len(products)} PRODUCT REFERENCES — one per product.\n\n"
+        "Reproduce EVERY packaging detail of each product IDENTICALLY — labels, text, colors, cap style, shape. "
+        "Do NOT alter or redesign any product.\n\n"
+        f"Arrange ALL {len(products)} products together in the scene, grouped naturally as they appear "
+        "in the reference photo layout. Products should be positioned close together on the same surface, "
+        "slightly overlapping or touching, at slightly different depths for a natural arrangement.\n\n"
+        f"PRODUCTS TO INCLUDE:\n{products_block}\n\n"
+        "ORIGINAL BACKGROUND REMOVAL — CRITICAL: Each product image was photographed against a plain studio "
+        "backdrop. That backdrop must be COMPLETELY REMOVED. Place only the physical products into the scene.\n\n"
+        "SEAMLESS SCENE INTEGRATION: Fully relight each product to match the scene — remove all studio rim lights, "
+        "white specular highlights, and colored background reflections. Replace with scene-appropriate lighting."
+    )
+
+    # Layer 3: composition
+    layer3 = (
+        f"COMPOSITION: {len(products)} Dr Gee herbal wellness products arranged as a product group. "
+        "3:4 portrait format. Products fill the lower 60% of the frame. "
+        "Background scene visible in the upper 40%. "
+        "Photorealistic commercial product photography — studio-grade clarity and detail."
+    )
+
+    full_prompt = f"{layer1}\n\n{layer2}\n\n{layer3}"
+
+    # Use first product's slug for filename
+    first_slug = re.sub(r"[^a-z0-9]+", "-", products[0]["name"].lower()).strip("-")
+    group_slug = f"group-{len(products)}products-{first_slug}"
+
+    try:
+        result = generate_social_image(
+            prompt=full_prompt,
+            product_slug=group_slug,
+            product_image_files=img_files if img_files else None,
+            output_dir=str(GENERATED_DIR),
+            scene_image_base64=scene_b64,
+            scene_image_filename=scene_filename,
+            on_progress=progress,
+        )
+        local_path = result.get("local_path")
+        image_url  = result.get("image_url")
+
+        evt_payload = {
+            "product_name": names_str,
+            "slug": group_slug,
+            "image_prompt": full_prompt,
+            "product": {"name": names_str, "slug": group_slug},
+        }
+        if image_url:
+            evt_payload["image_url"] = image_url
+        if local_path:
+            fn = Path(local_path).name
+            evt_payload["generated_image_url"] = f"/api/generated/{quote(fn)}"
+
+        _emit(jid, "image_ready", f"Group shot ready", evt_payload)
+        _emit(jid, "done", f"Done! Group image generated for {len(products)} products.", {
+            "reply": f"Here's your group shot with all {len(products)} products.",
+            "multi": False,
+        })
+
+    except Exception as e:
+        traceback.print_exc()
+        _emit(jid, "error", f"Generation failed: {str(e)[:100]}")
 
 
 def _run_multi_product_chat_job(jid: str, data: dict, product_names: list):
