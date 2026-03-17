@@ -376,6 +376,34 @@ def _prompt_name(name: str) -> str:
     """Return the display name to use inside image/video prompts (strips internal version suffixes)."""
     return _PROMPT_DISPLAY_NAMES.get(name, name)
 
+# Products that are smaller-format containers (green lid = small jar, roughly half the height of capsule bottles)
+_SMALL_FORMAT_PRODUCTS = {"Detox"}
+_SMALL_FORMAT_KEYWORDS = {"detox"}  # lower-case keywords for detection
+
+def _build_group_sizing_note(products: list) -> str:
+    """
+    Returns a sizing instruction when the group contains a mix of small and standard products.
+    Detects small-format products (green lid, small jar) and calls out the relative size difference.
+    """
+    small = [_prompt_name(p["name"]) for p in products
+             if p["name"] in _SMALL_FORMAT_PRODUCTS
+             or any(kw in p["name"].lower() for kw in _SMALL_FORMAT_KEYWORDS)]
+    standard = [_prompt_name(p["name"]) for p in products
+                if p["name"] not in _SMALL_FORMAT_PRODUCTS
+                and not any(kw in p["name"].lower() for kw in _SMALL_FORMAT_KEYWORDS)]
+    if not small or not standard:
+        return ""
+    small_str = ", ".join(small)
+    standard_str = ", ".join(standard)
+    return (
+        f"PRODUCT SIZING — CRITICAL: The products in this group are NOT all the same size. "
+        f"{small_str} is a SMALL FORMAT jar (green lid) — it is approximately HALF the height "
+        f"and half the width of the standard capsule bottles ({standard_str}). "
+        f"Render {small_str} visibly and noticeably smaller — it should look like a compact jar "
+        f"sitting in front of or beside the taller bottles, never the same height. "
+        f"Do NOT scale all products to the same height.\n\n"
+    )
+
 # Positive feedback keywords
 _FEEDBACK_POSITIVE = {
     "yes", "happy", "looks good", "perfect", "great", "love it",
@@ -1329,10 +1357,12 @@ def _run_group_chat_job(jid: str, data: dict, product_names: list):
         product_descs.append(f"- {display}: {desc[:200]}" if desc else f"- {display}")
 
     products_block = "\n".join(product_descs)
+    sizing_note = _build_group_sizing_note(products)
     layer2 = (
         f"REMAINING ATTACHED IMAGES ARE THE {len(products)} PRODUCT REFERENCES — one per product.\n\n"
         "Reproduce EVERY packaging detail of each product IDENTICALLY — labels, text, colors, cap style, shape. "
         "Do NOT alter or redesign any product.\n\n"
+        f"{sizing_note}"
         f"Arrange ALL {len(products)} products together in the scene, grouped naturally as they appear "
         "in the reference photo layout. Products should be positioned close together on the same surface, "
         "slightly overlapping or touching, at slightly different depths for a natural arrangement.\n\n"
