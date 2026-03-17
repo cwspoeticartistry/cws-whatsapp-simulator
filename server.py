@@ -376,32 +376,99 @@ def _prompt_name(name: str) -> str:
     """Return the display name to use inside image/video prompts (strips internal version suffixes)."""
     return _PROMPT_DISPLAY_NAMES.get(name, name)
 
-# Products that are smaller-format containers (green lid = small jar, roughly half the height of capsule bottles)
-_SMALL_FORMAT_PRODUCTS = {"Detox"}
-_SMALL_FORMAT_KEYWORDS = {"detox"}  # lower-case keywords for detection
+# ---------------------------------------------------------------------------
+# Product size tiers — for accurate relative sizing in group shots
+# Tier 1 = tallest, Tier 6 = shortest
+# ---------------------------------------------------------------------------
+_SIZE_TIER_MAP = {
+    # Tier 1 — XL: Q Lyfe dark 500ml opaque plastic bottles (very tall, roughly 2× capsule height)
+    1: {
+        "products": {"Herbal Boost Blend", "Libido Tonic", "Corrective for Women"},
+        "keywords": {"herbal boost", "libido tonic", "corrective for women"},
+        "label": "XL dark Q Lyfe bottle (~500ml, roughly 2× the height of a standard capsule bottle)",
+    },
+    # Tier 2 — Tall: silver standup pouches + amber tincture/syrup bottles (slightly taller than capsule bottles)
+    2: {
+        "products": {
+            "Bones, Joints & Gout Relief", "Man Powder",
+            "Herbal Balance Powder (Liver & Kidney Tonic)",
+            "Advanced Kidney, Liver & Bladder",
+            "Advanced Kidney Liver & Bladder Tincture",
+        },
+        "keywords": {"pouch", "bones", "man powder", "herbal balance powder", "advanced kidney"},
+        "label": "tall container (silver standup pouch or amber syrup bottle) — slightly taller than the standard capsule bottles",
+    },
+    # Tier 3 — Standard: white capsule bottles (reference/baseline height)
+    3: {
+        "products": {
+            "Blood Circulations", "Blood Purifying",
+            "Herbal Vitality & Flow Support", "Herbal Vitality Blend",
+            "Herbal Vitality & Flow Support 2", "Herbal Vitality Blend 2",
+        },
+        "keywords": {"capsule", "blood circulation", "blood purif", "herbal vitality"},
+        "label": "standard white capsule bottle (reference height — all other sizes are relative to this)",
+    },
+    # Tier 4 — Small bottles: small spray/dropper/syrup bottles (slightly taller than Detox but shorter than capsule bottles)
+    4: {
+        "products": {
+            "Eye and Ear Drops", "QS 8 Spray", "QS-8 Nasal Spray",
+            "QS 8 Throat Spray", "QS7 Syrup (Kalonji / Black Seed Oil)",
+            "With Nano Technology",
+        },
+        "keywords": {"eye and ear", "qs 8", "qs-8", "nasal spray", "throat spray", "qs7", "blackseed", "black seed", "nano"},
+        "label": "small bottle — slightly taller than the Detox jar but noticeably shorter than the standard capsule bottles",
+    },
+    # Tier 5 — XS: Detox and other green-lid small jars (about half the height of capsule bottles)
+    5: {
+        "products": {"Detox"},
+        "keywords": {"detox"},
+        "label": "small compact green-lid jar — approximately HALF the height of the standard capsule bottles",
+    },
+    # Tier 6 — XXS: Man's Soup — shortest product, slightly shorter than Detox
+    6: {
+        "products": {"Man's Soup"},
+        "keywords": {"man's soup", "mans soup", "men's soup"},
+        "label": "the SHORTEST product — a small jar, slightly shorter even than the Detox jar",
+    },
+}
+
+def _get_size_tier(product_name: str) -> int:
+    """Return the size tier (1=tallest, 6=shortest) for a product. Defaults to tier 3 (standard)."""
+    name_lower = product_name.lower()
+    for tier, info in _SIZE_TIER_MAP.items():
+        if product_name in info["products"]:
+            return tier
+        if any(kw in name_lower for kw in info["keywords"]):
+            return tier
+    return 3  # default to standard capsule height
 
 def _build_group_sizing_note(products: list) -> str:
     """
-    Returns a sizing instruction when the group contains a mix of small and standard products.
-    Detects small-format products (green lid, small jar) and calls out the relative size difference.
+    Returns a sizing instruction for group shots when the group contains products of different sizes.
+    Lists each product's size tier and generates a clear height-ordering instruction.
     """
-    small = [_prompt_name(p["name"]) for p in products
-             if p["name"] in _SMALL_FORMAT_PRODUCTS
-             or any(kw in p["name"].lower() for kw in _SMALL_FORMAT_KEYWORDS)]
-    standard = [_prompt_name(p["name"]) for p in products
-                if p["name"] not in _SMALL_FORMAT_PRODUCTS
-                and not any(kw in p["name"].lower() for kw in _SMALL_FORMAT_KEYWORDS)]
-    if not small or not standard:
-        return ""
-    small_str = ", ".join(small)
-    standard_str = ", ".join(standard)
+    tiered = [(p, _get_size_tier(p["name"])) for p in products]
+    tiers_present = {t for _, t in tiered}
+    if len(tiers_present) <= 1:
+        return ""  # all same tier — no sizing note needed
+
+    lines = []
+    for p, tier in tiered:
+        label = _SIZE_TIER_MAP.get(tier, _SIZE_TIER_MAP[3])["label"]
+        lines.append(f"  • {_prompt_name(p['name'])}: {label}")
+
+    # Build a height-order sentence (tallest → shortest among the products in this group)
+    ordered = sorted(tiered, key=lambda x: x[1])  # sort by tier ascending = tallest first
+    height_order = " > ".join(_prompt_name(p["name"]) for p, _ in ordered)
+
     return (
-        f"PRODUCT SIZING — CRITICAL: The products in this group are NOT all the same size. "
-        f"{small_str} is a SMALL FORMAT jar (green lid) — it is approximately HALF the height "
-        f"and half the width of the standard capsule bottles ({standard_str}). "
-        f"Render {small_str} visibly and noticeably smaller — it should look like a compact jar "
-        f"sitting in front of or beside the taller bottles, never the same height. "
-        f"Do NOT scale all products to the same height.\n\n"
+        "PRODUCT SIZING — CRITICAL: The products in this group are NOT all the same size. "
+        "Render each product at its correct real-world height relative to the others — "
+        "do NOT scale all products to the same height. Size reference for each product:\n\n"
+        + "\n".join(lines) + "\n\n"
+        f"Height order tallest to shortest: {height_order}.\n\n"
+        "The size differences must be clearly visible and proportionally accurate. "
+        "A product described as 'half the height' must look noticeably shorter — not a subtle difference.\n\n"
     )
 
 # Positive feedback keywords
